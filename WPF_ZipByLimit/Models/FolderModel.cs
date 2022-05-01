@@ -21,8 +21,8 @@ namespace WPF_ZipByLimit.Models
             get { return _FolderPath; }
             set { SetProperty(ref _FolderPath, value); }
         }
-        private long _FolderSize;
-        public long FolderSize 
+        private string _FolderSize;
+        public string FolderSize 
         {
             get { return _FolderSize; }
             set { SetProperty(ref _FolderSize,value); }
@@ -45,5 +45,19 @@ namespace WPF_ZipByLimit.Models
             get { return _CurrentZipFile; }
             set { SetProperty(ref _CurrentZipFile, value); }
         }
+        private bool _HasSubFolder;
+        public bool HasSubFolder
+        {
+            get { return _HasSubFolder; }
+            set { SetProperty(ref _HasSubFolder, value); }
+        }
+
+        public List<ZipFileModel> ZipFileList { get; set; } = new List<ZipFileModel>();
+        //private bool _Removed;
+        //public bool Removed
+        //{
+        //    get { return _Removed; }
+        //    set { SetProperty(ref _Removed, value); }
+        //}
     }
 }

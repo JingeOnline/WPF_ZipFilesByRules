@@ -12,17 +12,6 @@ namespace WPF_ZipByLimit.Models
 
     }
 
-    public enum ZipRule
-    {
-        [Description("By Size")]
-        BySize,
-        [Description("By Amount")]
-        ByAmount
-    }
 
-    public enum SizeUnit
-    {
-        MB,
-        GB
-    }
+
 }

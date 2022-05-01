@@ -1,19 +1,330 @@
-﻿using Prism.Mvvm;
+﻿using Prism.Commands;
+using Prism.Mvvm;
+using System;
+using System.Windows;
+using WPF_ZipByLimit.Constants;
+using Microsoft.WindowsAPICodePack.Dialogs;
+using System.IO;
+using System.Collections.ObjectModel;
+using WPF_ZipByLimit.Models;
+using System.Threading.Tasks;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace WPF_ZipByLimit.ViewModels
 {
     public class MainWindowViewModel : BindableBase
     {
-        private string _title = "Prism Application";
-        public string Title
+        private SelectFolderRule _FolderRule;
+        public SelectFolderRule FolderRule
         {
-            get { return _title; }
-            set { SetProperty(ref _title, value); }
+            get { return _FolderRule; }
+            set { SetProperty(ref _FolderRule, value); }
         }
+
+        private ZipRule _SelectedZipRule;
+        public ZipRule SelectedZipRule
+        {
+            get { return _SelectedZipRule; }
+            set
+            {
+                SetProperty(ref _SelectedZipRule, value);
+                RaisePropertyChanged(nameof(ByAmountSettingVisibility));
+                RaisePropertyChanged(nameof(BySizeSettingVisibility));
+            }
+        }
+        private SizeUnit _SelectedSizeUnit;
+        public SizeUnit SelectedSizeUnit
+        {
+            get { return _SelectedSizeUnit; }
+            set { SetProperty(ref _SelectedSizeUnit,value); }
+        }
+
+        public Visibility BySizeSettingVisibility
+        {
+            get
+            {
+                return SelectedZipRule == ZipRule.BySize ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        public Visibility ByAmountSettingVisibility
+        {
+            get
+            {
+                return SelectedZipRule == ZipRule.ByAmount ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+        private string _SourceFolderPath;
+        public string SourceFolderPath
+        {
+            get { return _SourceFolderPath; }
+            set { SetProperty(ref _SourceFolderPath, value); }
+        }
+        private string _TargetFolderPath;
+        public string TargetFolderPath
+        {
+            get { return _TargetFolderPath; }
+            set { SetProperty(ref _TargetFolderPath, value); }
+        }
+
+        private ObservableCollection<FolderModel> _FolderModelCollection;
+        public ObservableCollection<FolderModel> FolderModelCollection
+        {
+            get { return _FolderModelCollection; }
+            set { SetProperty(ref _FolderModelCollection, value); }
+        }
+
+        private int _MaxZipSize;
+        public int MaxZipSize
+        {
+            get { return _MaxZipSize; }
+            set { SetProperty(ref _MaxZipSize, value); }
+        }
+
+        private int _MaxZipFilesContains;
+        public int MaxZipFilesContains
+        {
+            get { return _MaxZipFilesContains; }
+            set { SetProperty(ref _MaxZipFilesContains, value); }
+        }
+
+        private bool _DeleteFilesAfterZip;
+        public bool DeleteFilesAfterZip
+        {
+            get { return _DeleteFilesAfterZip; }
+            set { SetProperty(ref _DeleteFilesAfterZip, value); }
+        }
+
+        private bool _DeleteFolderAfterZip;
+        public bool DeleteFolderAfterZip
+        {
+            get { return _DeleteFolderAfterZip; }
+            set { SetProperty(ref _DeleteFolderAfterZip, value); }
+        }
+
+        private FolderModel _DataGridSelectedFolder;
+        public FolderModel DataGridSelectedFolder
+        {
+            get { return _DataGridSelectedFolder; }
+            set { SetProperty(ref _DataGridSelectedFolder, value); }
+        }
+
+        public DelegateCommand SelectSourceFolderCommand { get; set; }
+        public DelegateCommand SelectTargetFolderCommand { get; set; }
+        public DelegateCommand LoadFoldersCommand { get; set; }
+        public DelegateCommand DeleteSelectedFolderCommand { get; set; }
+        public DelegateCommand StartZipCommand { get; set; }
+
 
         public MainWindowViewModel()
         {
+            SelectSourceFolderCommand = new DelegateCommand(selectSourceFolder, canSelectSourceFolder);
+            SelectTargetFolderCommand = new DelegateCommand(selectTargetFolder, canSelectTargetFolder);
+            LoadFoldersCommand = new DelegateCommand(loadFolders, canLoadFolders);
+            DeleteSelectedFolderCommand = new DelegateCommand(deleteSelectedFolder, canDeleteSelectedFolder);
+            StartZipCommand = new DelegateCommand(startZip, canStartZip);
+        }
 
+
+
+        private bool canStartZip()
+        {
+            return true;
+        }
+
+        private void startZip()
+        {
+            if (SelectedZipRule == ZipRule.BySize)
+            {
+                foreach(FolderModel folderModel in FolderModelCollection)
+                {
+                    preCalculateZipFilesBySize(MaxZipSize, SelectedSizeUnit, folderModel);
+                }
+            }
+            else
+            {
+                //Todo:start zip
+            }
+        }
+
+        private bool canDeleteSelectedFolder()
+        {
+            return true;
+        }
+
+        private void deleteSelectedFolder()
+        {
+            FolderModelCollection.Remove(DataGridSelectedFolder);
+        }
+
+        private bool canLoadFolders()
+        {
+            return true;
+        }
+
+        private void loadFolders()
+        {
+            FolderModelCollection = new ObservableCollection<FolderModel>();
+            if (FolderRule == SelectFolderRule.SelectedFolder)
+            {
+                loadFolderAsync(SourceFolderPath);
+            }
+            else
+            {
+                loadSubFoldersAsync(SourceFolderPath);
+            }
+        }
+
+        private bool canSelectTargetFolder()
+        {
+            return true;
+        }
+
+        private void selectTargetFolder()
+        {
+            using (CommonOpenFileDialog dialog = new CommonOpenFileDialog())
+            {
+                dialog.IsFolderPicker = true;
+                dialog.Multiselect = false;
+                //设置打开文件窗口的启动路径
+                if (!string.IsNullOrEmpty(TargetFolderPath)) dialog.InitialDirectory = TargetFolderPath;
+                if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+                {
+                    TargetFolderPath = dialog.FileName;
+                }
+            }
+        }
+
+        private bool canSelectSourceFolder()
+        {
+            return true;
+        }
+
+        private void selectSourceFolder()
+        {
+            using (CommonOpenFileDialog dialog = new CommonOpenFileDialog())
+            {
+                dialog.IsFolderPicker = true;
+                dialog.Multiselect = false;
+                if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+                {
+                    SourceFolderPath = dialog.FileName;
+                    //设置输出文件夹的路径为Source文件夹的父级路径
+                    TargetFolderPath = Directory.GetParent(SourceFolderPath).FullName;
+                }
+            }
+        }
+
+        private async Task loadFolderAsync(string folderPath)
+        {
+            if (string.IsNullOrEmpty(folderPath)) return;
+            string folderName = Path.GetFileName(folderPath);
+            int filesCount = Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly).Length;
+            bool hasSubFolder = Directory.GetDirectories(folderPath).Length != 0;
+            DirectoryInfo dirInfo = new DirectoryInfo(folderPath);
+            long dirSize = await Task.Run(() => dirInfo.EnumerateFiles("*", SearchOption.TopDirectoryOnly).Sum(file => file.Length));
+            string folderSize = getSizeWithUnit(dirSize);
+            FolderModel folder = new FolderModel()
+            {
+                FolderPath = folderPath,
+                FolderName = folderName,
+                FileCount = filesCount,
+                HasSubFolder = hasSubFolder,
+                FolderSize = folderSize
+            };
+            FolderModelCollection.Add(folder);
+        }
+
+        private async Task loadSubFoldersAsync(string folderPath)
+        {
+            if (string.IsNullOrEmpty(folderPath)) return;
+            string[] subFolderPathArray = Directory.GetDirectories(folderPath);
+            foreach (string subFolderPath in subFolderPathArray)
+            {
+                await loadFolderAsync(subFolderPath);
+            }
+        }
+
+        private string getSizeWithUnit(long size)
+        {
+            double KB = 1024;
+            double MB = KB * 1024;
+            double GB = MB * 1024;
+            if (size > GB)
+            {
+                double result = size / GB;
+                return result.ToString("0.0") + " GB";
+            }
+            else if (size > MB)
+            {
+                double result = size / MB;
+                return result.ToString("0.0") + " MB";
+            }
+            else if (size > KB)
+            {
+                double result = size / KB;
+                return result.ToString("0.0") + " KB";
+            }
+            else
+            {
+                return size.ToString() + " BT";
+            }
+        }
+
+        private void preCalculateZipFilesBySize(int sizeLimitNum, SizeUnit unit, FolderModel folderModel)
+        {
+            long sizeLimit = 0; ;
+            switch (unit)
+            {
+                case SizeUnit.MB:
+                    sizeLimit = (long)sizeLimitNum * 1024 * 1024;
+                    break;
+                case SizeUnit.GB:
+                    sizeLimit = (long)sizeLimitNum * 1024 * 1024 * 1024;
+                    break;
+            }
+
+            DirectoryInfo dirInfo = new DirectoryInfo(folderModel.FolderPath);
+            List<FileInfo> allFilesInTheFolder = dirInfo.EnumerateFiles("*", SearchOption.TopDirectoryOnly).ToList();
+            int index = 1;
+            List<ZipFileModel> zipFileModelList = new List<ZipFileModel>();
+            while (allFilesInTheFolder.Count > 0)
+            {
+                string fileName = folderModel.FolderName + "_" + index.ToString("D2");
+                ZipFileModel zipFileModel = new ZipFileModel()
+                {
+                    SizeLimit = sizeLimit,
+                    FileName = fileName,
+                    Path = Path.Combine(TargetFolderPath, fileName)
+                };
+                putFilesInZip(ref zipFileModel, ref allFilesInTheFolder);
+                zipFileModelList.Add(zipFileModel);
+                index++;
+            }
+            folderModel.ZipFileList = zipFileModelList;
+            folderModel.OutputZipCount = zipFileModelList.Count;
+        }
+
+        private void putFilesInZip(ref ZipFileModel zipFileModel, ref List<FileInfo> fileInfos)
+        {
+            long zippedFileSize = 0;
+            List<FileInfo> fileList = new List<FileInfo>();
+            for (int i = 0; i < fileInfos.Count(); i++)
+            {
+                zippedFileSize += fileInfos[i].Length;
+                if (zippedFileSize > zipFileModel.SizeLimit)
+                {
+                    break;
+                }
+                else
+                {
+                    fileList.Add(fileInfos[i]);
+                    fileInfos.Remove(fileInfos[i]);
+                }
+            }
+            zipFileModel.Files = fileList;
+            //return zipFileModel;
         }
     }
 }

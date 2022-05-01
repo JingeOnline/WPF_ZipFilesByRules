@@ -3,7 +3,24 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:prism="http://prismlibrary.com/"
         prism:ViewModelLocator.AutoWireViewModel="True"
-        Title="Zip Folders By Limit" Height="350" Width="605">
+        xmlns:local="clr-namespace:WPF_ZipByLimit.Views"
+        xmlns:cvt="clr-namespace:WPF_ZipByLimit.Converters"
+        xmlns:constants="clr-namespace:WPF_ZipByLimit.Constants"
+        xmlns:System="clr-namespace:System;assembly=mscorlib"
+        Title="Zip A Folder By Rules" Height="600" Width="780">
+    <Window.Resources>
+        <ObjectDataProvider x:Key="SizeUnitEnum" MethodName="GetValues" ObjectType="{x:Type System:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="constants:SizeUnit"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+        <cvt:EnumToRadioButtonConverter x:Key="EnumConverter"/>
+        <Style TargetType="{x:Type TextBlock}" x:Key="RightAlignCell">
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="TextAlignment" Value="Right"/>
+        </Style>
+    </Window.Resources>
+
     <Grid Margin="8">
         <!--<ContentControl prism:RegionManager.RegionName="ContentRegion" />-->
         <Grid.RowDefinitions>
@@ -19,18 +36,33 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <Label Content="Please input folder path:" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
-                <Button Content="Select Folder" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                <Button Content="Select Folder" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Command="{Binding SelectSourceFolderCommand}"/>
             </Grid>
-            <TextBox Text="C://fjie/wj/we/" Margin="0,0,0,8" VerticalAlignment="Stretch" FontSize="14"/>
-            <Button Content="Load All Files" Margin="0,0,0,8"/>
+            <TextBox Text="{Binding SourceFolderPath,Mode=TwoWay,UpdateSourceTrigger=Default}" Margin="0,0,0,0" VerticalAlignment="Stretch" VerticalContentAlignment="Center" Height="26" FontSize="14"/>
+            <!--<TextBlock Text="* Iterate all sub-folders if exist." Foreground="Gray" HorizontalAlignment="Right"/>-->
+            <GroupBox Header="Folder Select Rule" Margin="0,4,0,4">
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton Content="Zip the selected folder" Margin="0,0,8,0" IsChecked="{Binding Path=FolderRule, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:SelectFolderRule.SelectedFolder}}"/>
+                    <RadioButton Content="Zip the sub-folder of selected folder" IsChecked="{Binding Path=FolderRule, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:SelectFolderRule.SubFolderOfSelectedFolder}}"/>
+                </StackPanel>
+            </GroupBox>
+            <Button Content="Load Folders" Margin="0,0,0,8" Command="{Binding LoadFoldersCommand}"/>
         </StackPanel>
-        <DataGrid AutoGenerateColumns="False" Grid.Row="1">
+        <DataGrid AutoGenerateColumns="False" Grid.Row="1" ItemsSource="{Binding FolderModelCollection}" CanUserAddRows="False" SelectedItem="{Binding DataGridSelectedFolder}">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Folder Name" Width="*"/>
-                <DataGridTextColumn Header="Folder Size" Width="*"/>
-                <DataGridTextColumn Header="Folder Files" Width="*"/>
-                <DataGridTextColumn Header="Output Zip Files" Width="*"/>
-                <DataGridTemplateColumn Header="Current working on..." Width="*">
+                <DataGridTemplateColumn>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <!--<Button Width="36" FontFamily="Segoe MDL2 Assets" Content="&#xE107;" Command="{Binding RelativeSource={RelativeSource AncestorType=Grid, Mode=FindAncestor, AncestorLevel=2}, Path=DataContext.DeleteSelectedFolderCommand}"/>-->
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Folder Name" Width="*" Binding="{Binding FolderName}" IsReadOnly="True"/>
+                <DataGridCheckBoxColumn Header="Has Sub-Folder" Binding="{Binding HasSubFolder}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Folder Size" Width="auto" IsReadOnly="True" Binding="{Binding FolderSize}" ElementStyle="{StaticResource RightAlignCell}"/>
+                <DataGridTextColumn Header="Folder Files" Width="auto" IsReadOnly="True" Binding="{Binding FileCount}" ElementStyle="{StaticResource RightAlignCell}"/>
+                <DataGridTextColumn Header="Output Zip Files" Width="auto" IsReadOnly="True" Binding="{Binding OutputZipCount}"/>
+                <DataGridTemplateColumn Header="Current working on..." Width="*" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Grid>
@@ -49,15 +81,12 @@
                     <ColumnDefinition Width="2*"/>
                 </Grid.ColumnDefinitions>
                 <GroupBox Header="Select Zip Rules" Margin="0,4,0,4">
-                    <ListBox>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <RadioButton GroupName="RulesList" Content="{Binding}"/>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                    <StackPanel>
+                        <RadioButton IsChecked="{Binding Path=SelectedZipRule, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:ZipRule.BySize}}" Content="By Size"/>
+                        <RadioButton IsChecked="{Binding Path=SelectedZipRule, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:ZipRule.ByAmount}}" Content="By Amount"/>
+                    </StackPanel>
                 </GroupBox>
-                <GroupBox Header="Set Zip Rules" Margin="0,4,0,4" Grid.Column="1" Visibility="Collapsed">
+                <GroupBox Header="Set Zip Rules" Margin="0,4,0,4" Grid.Column="1" Visibility="{Binding BySizeSettingVisibility}">
                     <Grid x:Name="SizeLimitationRule">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="auto"/>
@@ -70,15 +99,15 @@
                             <RowDefinition Height="auto"/>
                         </Grid.RowDefinitions>
                         <Label Content="Max zip size:"/>
-                        <TextBox Grid.Column="1" VerticalContentAlignment="Center" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        <ComboBox Grid.Column="2"/>
+                        <TextBox Grid.Column="1" VerticalContentAlignment="Center" Margin="8,0,0,0" Text="{Binding MaxZipSize,Mode=TwoWay}"/>
+                        <ComboBox Grid.Column="2" ItemsSource="{Binding Source={StaticResource SizeUnitEnum}}" SelectedItem="{Binding SelectedSizeUnit}" Width="64" Margin="8,0,0,0"/>
                         <Label Content="Delete files after zip:" Grid.Row="1"/>
-                        <CheckBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        <CheckBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0" IsChecked="{Binding DeleteFilesAfterZip, Mode=TwoWay}"/>
                         <Label Content="Delete folder after zip:" Grid.Row="2"/>
-                        <CheckBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        <CheckBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0" IsChecked="{Binding DeleteFolderAfterZip, Mode=TwoWay}"/>
                     </Grid>
                 </GroupBox>
-                <GroupBox Header="Set Zip Rules" Margin="0,4,0,4" Grid.Column="1" >
+                <GroupBox Header="Set Zip Rules" Margin="0,4,0,4" Grid.Column="1" Visibility="{Binding ByAmountSettingVisibility}">
                     <Grid x:Name="CountLimitationRule">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="auto"/>
@@ -91,11 +120,11 @@
                             <RowDefinition Height="auto"/>
                         </Grid.RowDefinitions>
                         <Label Content="Max file amount:"/>
-                        <TextBox Grid.Column="1" VerticalContentAlignment="Center" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        <TextBox Grid.Column="1" VerticalContentAlignment="Center" Margin="8,0,0,0" Text="{Binding MaxZipFilesContains,Mode=TwoWay}"/>
                         <Label Content="Delete files after zip:" Grid.Row="1"/>
-                        <CheckBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        <CheckBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0" IsChecked="{Binding DeleteFilesAfterZip, Mode=TwoWay}"/>
                         <Label Content="Delete folder after zip:" Grid.Row="2"/>
-                        <CheckBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        <CheckBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0" IsChecked="{Binding DeleteFolderAfterZip, Mode=TwoWay}"/>
                     </Grid>
                 </GroupBox>
             </Grid>
@@ -103,12 +132,16 @@
                 <Label>Select ZIP output path:</Label>
                 <TextBlock VerticalAlignment="Center" FontSize="14">
                     <Hyperlink>
-                        <TextBlock Text="f://weere/weweo"/>
+                        <TextBlock Text="{Binding TargetFolderPath,Mode=OneWay}">
+                            <TextBlock.InputBindings>
+                                <MouseBinding Command="{Binding SelectTargetFolderCommand}" MouseAction="LeftClick"/>
+                            </TextBlock.InputBindings>
+                        </TextBlock>
                     </Hyperlink>
                 </TextBlock>
             </StackPanel>
-            <Button Content="Start Zip" Margin="0,4,0,0"/>
+            <Button Content="Start Zip" Margin="0,4,0,0" Command="{Binding StartZipCommand}"/>
         </StackPanel>
-        <TextBlock Grid.Row="3" Text="Developed by Jinge Zhang" HorizontalAlignment="Right" Margin="0,0,0,-6" Foreground="Gray"/>
+        <TextBlock Grid.Row="3" Text="Developed By Jinge Zhang" HorizontalAlignment="Right" Margin="0,0,0,-6" Foreground="Gray"/>
     </Grid>
 </Window>
