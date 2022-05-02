@@ -10,17 +10,18 @@ using WPF_ZipByLimit.Models;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
+using System.IO.Compression;
 
 namespace WPF_ZipByLimit.ViewModels
 {
     public class MainWindowViewModel : BindableBase
     {
-        private SelectFolderRule _FolderRule;
-        public SelectFolderRule FolderRule
-        {
-            get { return _FolderRule; }
-            set { SetProperty(ref _FolderRule, value); }
-        }
+        //private SelectFolderRule _FolderRule;
+        //public SelectFolderRule FolderRule
+        //{
+        //    get { return _FolderRule; }
+        //    set { SetProperty(ref _FolderRule, value); }
+        //}
 
         private ZipRule _SelectedZipRule;
         public ZipRule SelectedZipRule
@@ -31,13 +32,18 @@ namespace WPF_ZipByLimit.ViewModels
                 SetProperty(ref _SelectedZipRule, value);
                 RaisePropertyChanged(nameof(ByAmountSettingVisibility));
                 RaisePropertyChanged(nameof(BySizeSettingVisibility));
+                //preCalculate();
             }
         }
         private SizeUnit _SelectedSizeUnit;
         public SizeUnit SelectedSizeUnit
         {
             get { return _SelectedSizeUnit; }
-            set { SetProperty(ref _SelectedSizeUnit,value); }
+            set
+            {
+                SetProperty(ref _SelectedSizeUnit, value);
+                //preCalculate(); 
+            }
         }
 
         public Visibility BySizeSettingVisibility
@@ -79,14 +85,22 @@ namespace WPF_ZipByLimit.ViewModels
         public int MaxZipSize
         {
             get { return _MaxZipSize; }
-            set { SetProperty(ref _MaxZipSize, value); }
+            set
+            {
+                SetProperty(ref _MaxZipSize, value);
+                //preCalculate(); 
+            }
         }
 
         private int _MaxZipFilesContains;
         public int MaxZipFilesContains
         {
             get { return _MaxZipFilesContains; }
-            set { SetProperty(ref _MaxZipFilesContains, value); }
+            set
+            {
+                SetProperty(ref _MaxZipFilesContains, value);
+                //preCalculate();
+            }
         }
 
         private bool _DeleteFilesAfterZip;
@@ -115,6 +129,7 @@ namespace WPF_ZipByLimit.ViewModels
         public DelegateCommand LoadFoldersCommand { get; set; }
         public DelegateCommand DeleteSelectedFolderCommand { get; set; }
         public DelegateCommand StartZipCommand { get; set; }
+        public DelegateCommand PreCalculateCommand { get; set; }
 
 
         public MainWindowViewModel()
@@ -124,6 +139,10 @@ namespace WPF_ZipByLimit.ViewModels
             LoadFoldersCommand = new DelegateCommand(loadFolders, canLoadFolders);
             DeleteSelectedFolderCommand = new DelegateCommand(deleteSelectedFolder, canDeleteSelectedFolder);
             StartZipCommand = new DelegateCommand(startZip, canStartZip);
+            //Todo:把preCalculate触发改造成Command，用户回车，或者控件lostFocus
+            //https://stackoverflow.com/questions/26353893/implementing-textbox-lostfocus-event-in-mvvm
+            //https://stackoverflow.com/questions/28941294/how-to-use-lostfocus-as-a-command-in-wpf
+            PreCalculateCommand = new DelegateCommand(preCalculate);
         }
 
 
@@ -135,17 +154,7 @@ namespace WPF_ZipByLimit.ViewModels
 
         private void startZip()
         {
-            if (SelectedZipRule == ZipRule.BySize)
-            {
-                foreach(FolderModel folderModel in FolderModelCollection)
-                {
-                    preCalculateZipFilesBySize(MaxZipSize, SelectedSizeUnit, folderModel);
-                }
-            }
-            else
-            {
-                //Todo:start zip
-            }
+            //Todo:start zip
         }
 
         private bool canDeleteSelectedFolder()
@@ -166,14 +175,17 @@ namespace WPF_ZipByLimit.ViewModels
         private void loadFolders()
         {
             FolderModelCollection = new ObservableCollection<FolderModel>();
-            if (FolderRule == SelectFolderRule.SelectedFolder)
-            {
-                loadFolderAsync(SourceFolderPath);
-            }
-            else
-            {
-                loadSubFoldersAsync(SourceFolderPath);
-            }
+            loadFolderAsync(SourceFolderPath);
+            #region Removed Code
+            //if (FolderRule == SelectFolderRule.SelectedFolder)
+            //{
+            //    loadFolderAsync(SourceFolderPath);
+            //}
+            //else
+            //{
+            //    loadSubFoldersAsync(SourceFolderPath);
+            //}
+            #endregion
         }
 
         private bool canSelectTargetFolder()
@@ -272,8 +284,27 @@ namespace WPF_ZipByLimit.ViewModels
             }
         }
 
+        private void preCalculate()
+        {
+            if (FolderModelCollection == null) return;
+            //按文件大小打包
+            if (SelectedZipRule == ZipRule.BySize)
+            {
+                foreach (FolderModel folderModel in FolderModelCollection)
+                {
+                    preCalculateZipFilesBySize(MaxZipSize, SelectedSizeUnit, folderModel);
+                }
+            }
+            //按包含的文件数量打包
+            else
+            {
+
+            }
+        }
+
         private void preCalculateZipFilesBySize(int sizeLimitNum, SizeUnit unit, FolderModel folderModel)
         {
+            if (sizeLimitNum == 0) return;
             long sizeLimit = 0; ;
             switch (unit)
             {
@@ -306,25 +337,69 @@ namespace WPF_ZipByLimit.ViewModels
             folderModel.OutputZipCount = zipFileModelList.Count;
         }
 
-        private void putFilesInZip(ref ZipFileModel zipFileModel, ref List<FileInfo> fileInfos)
+        private void putFilesInZip(ref ZipFileModel zipFileModel, ref List<FileInfo> filesForZip)
         {
             long zippedFileSize = 0;
-            List<FileInfo> fileList = new List<FileInfo>();
-            for (int i = 0; i < fileInfos.Count(); i++)
+            List<FileInfo> zipFiles = new List<FileInfo>();
+            #region Removed Method
+            //for (int i = 0; i < fileInfos.Count(); i++)
+            //{
+            //    zippedFileSize += fileInfos[i].Length;
+            //    if (zippedFileSize > zipFileModel.SizeLimit)
+            //    {
+            //        break;
+            //    }
+            //    else
+            //    {
+            //        fileList.Add(fileInfos[i]);
+            //        //这里不能这样写，因为移除了一个元素，所以数组的元素index就会被重置。
+            //        //fileInfos.Remove(fileInfos[i]);
+            //    }
+            //}
+            #endregion
+            foreach (FileInfo fileInfo in filesForZip)
             {
-                zippedFileSize += fileInfos[i].Length;
-                if (zippedFileSize > zipFileModel.SizeLimit)
+                zippedFileSize += fileInfo.Length;
+                if (zippedFileSize < zipFileModel.SizeLimit)
                 {
-                    break;
+                    zipFiles.Add(fileInfo);
                 }
                 else
                 {
-                    fileList.Add(fileInfos[i]);
-                    fileInfos.Remove(fileInfos[i]);
+                    break;
                 }
             }
-            zipFileModel.Files = fileList;
-            //return zipFileModel;
+            foreach (FileInfo fileInfo in zipFiles)
+            {
+                filesForZip.Remove(fileInfo);
+            }
+            zipFileModel.Files = zipFiles;
+        }
+
+        private async Task createZipAsync(string zipFilePath, List<string> filePathList)
+        {
+            await Task.Run(() =>
+            {
+
+                try
+                {
+                    //创建并打开zip文件
+                    using (var zip = ZipFile.Open(zipFilePath, ZipArchiveMode.Create))
+                    {
+                        foreach (var filePath in filePathList)
+                        {
+                            // 向zip文件中添加文件
+                            zip.CreateEntryFromFile(filePath, Path.GetFileName(filePath), CompressionLevel.Optimal);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Zip Error Occur", MessageBoxButton.OK, MessageBoxImage.Error);
+                    throw ex;
+                }
+
+            });
         }
     }
 }

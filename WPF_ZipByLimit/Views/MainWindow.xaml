@@ -40,13 +40,13 @@
             </Grid>
             <TextBox Text="{Binding SourceFolderPath,Mode=TwoWay,UpdateSourceTrigger=Default}" Margin="0,0,0,0" VerticalAlignment="Stretch" VerticalContentAlignment="Center" Height="26" FontSize="14"/>
             <!--<TextBlock Text="* Iterate all sub-folders if exist." Foreground="Gray" HorizontalAlignment="Right"/>-->
-            <GroupBox Header="Folder Select Rule" Margin="0,4,0,4">
+            <!--<GroupBox Header="Folder Select Rule" Margin="0,4,0,4">
                 <StackPanel Orientation="Horizontal">
                     <RadioButton Content="Zip the selected folder" Margin="0,0,8,0" IsChecked="{Binding Path=FolderRule, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:SelectFolderRule.SelectedFolder}}"/>
                     <RadioButton Content="Zip the sub-folder of selected folder" IsChecked="{Binding Path=FolderRule, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:SelectFolderRule.SubFolderOfSelectedFolder}}"/>
                 </StackPanel>
-            </GroupBox>
-            <Button Content="Load Folders" Margin="0,0,0,8" Command="{Binding LoadFoldersCommand}"/>
+            </GroupBox>-->
+            <Button Content="Load Folders" Margin="0,8,0,8" Command="{Binding LoadFoldersCommand}"/>
         </StackPanel>
         <DataGrid AutoGenerateColumns="False" Grid.Row="1" ItemsSource="{Binding FolderModelCollection}" CanUserAddRows="False" SelectedItem="{Binding DataGridSelectedFolder}">
             <DataGrid.Columns>
@@ -99,7 +99,11 @@
                             <RowDefinition Height="auto"/>
                         </Grid.RowDefinitions>
                         <Label Content="Max zip size:"/>
-                        <TextBox Grid.Column="1" VerticalContentAlignment="Center" Margin="8,0,0,0" Text="{Binding MaxZipSize,Mode=TwoWay}"/>
+                        <TextBox Grid.Column="1" VerticalContentAlignment="Center" Margin="8,0,0,0" Text="{Binding MaxZipSize,Mode=TwoWay,UpdateSourceTrigger=LostFocus}">
+                            <TextBox.InputBindings>
+                                <KeyBinding Command="" Key="Return"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
                         <ComboBox Grid.Column="2" ItemsSource="{Binding Source={StaticResource SizeUnitEnum}}" SelectedItem="{Binding SelectedSizeUnit}" Width="64" Margin="8,0,0,0"/>
                         <Label Content="Delete files after zip:" Grid.Row="1"/>
                         <CheckBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0" IsChecked="{Binding DeleteFilesAfterZip, Mode=TwoWay}"/>
