@@ -38,22 +38,22 @@
                 <Label Content="Please input folder path:" VerticalAlignment="Center" VerticalContentAlignment="Center"/>
                 <Button Content="Select Folder" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Command="{Binding SelectSourceFolderCommand}"/>
             </Grid>
-            <TextBox Text="{Binding SourceFolderPath,Mode=TwoWay,UpdateSourceTrigger=Default}" Margin="0,0,0,0" VerticalAlignment="Stretch" VerticalContentAlignment="Center" Height="26" FontSize="14"/>
+            <TextBox Text="{Binding UserInputFolderPath,Mode=TwoWay,UpdateSourceTrigger=Default}" Margin="0,0,0,0" VerticalAlignment="Stretch" VerticalContentAlignment="Center" Height="26" FontSize="14"/>
             <!--<TextBlock Text="* Iterate all sub-folders if exist." Foreground="Gray" HorizontalAlignment="Right"/>-->
-            <!--<GroupBox Header="Folder Select Rule" Margin="0,4,0,4">
+            <GroupBox Header="Zip Target" Margin="0,4,0,4">
                 <StackPanel Orientation="Horizontal">
-                    <RadioButton Content="Zip the selected folder" Margin="0,0,8,0" IsChecked="{Binding Path=FolderRule, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:SelectFolderRule.SelectedFolder}}"/>
-                    <RadioButton Content="Zip the sub-folder of selected folder" IsChecked="{Binding Path=FolderRule, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:SelectFolderRule.SubFolderOfSelectedFolder}}"/>
+                    <RadioButton Content="Zip Files In Folder" Margin="0,0,8,0" IsChecked="{Binding Path=ZipTarget, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:FoldersOrFiles.ZipFiles}}"/>
+                    <RadioButton Content="Zip Selected Folders" IsChecked="{Binding Path=ZipTarget, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:FoldersOrFiles.ZipFolders}}"/>
                 </StackPanel>
-            </GroupBox>-->
-            <Button Content="Load Folders" Margin="0,8,0,8" Command="{Binding LoadFoldersCommand}"/>
+            </GroupBox>
+            <!--<Button Content="Load Folders" Margin="0,8,0,8" Command="{Binding LoadFoldersCommand}"/>-->
         </StackPanel>
         <DataGrid AutoGenerateColumns="False" Grid.Row="1" ItemsSource="{Binding FolderModelCollection}" CanUserAddRows="False" SelectedItem="{Binding DataGridSelectedFolder}">
             <DataGrid.Columns>
                 <DataGridTemplateColumn>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <!--<Button Width="36" FontFamily="Segoe MDL2 Assets" Content="&#xE107;" Command="{Binding RelativeSource={RelativeSource AncestorType=Grid, Mode=FindAncestor, AncestorLevel=2}, Path=DataContext.DeleteSelectedFolderCommand}"/>-->
+                            <Button Width="36" FontFamily="Segoe MDL2 Assets" Content="&#xE107;" Command="{Binding RelativeSource={RelativeSource AncestorType=Grid, Mode=FindAncestor, AncestorLevel=2}, Path=DataContext.DeleteSelectedFolderCommand}"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
