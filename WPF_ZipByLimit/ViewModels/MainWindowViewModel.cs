@@ -32,7 +32,7 @@ namespace WPF_ZipByLimit.ViewModels
                 SetProperty(ref _SelectedZipRule, value);
                 RaisePropertyChanged(nameof(ByAmountSettingVisibility));
                 RaisePropertyChanged(nameof(BySizeSettingVisibility));
-                //preCalculate();
+                preCalculate();
             }
         }
         private SizeUnit _SelectedSizeUnit;
@@ -42,7 +42,7 @@ namespace WPF_ZipByLimit.ViewModels
             set
             {
                 SetProperty(ref _SelectedSizeUnit, value);
-                //preCalculate(); 
+                preCalculate();
             }
         }
 
@@ -88,7 +88,7 @@ namespace WPF_ZipByLimit.ViewModels
             set
             {
                 SetProperty(ref _MaxZipSize, value);
-                //preCalculate(); 
+                preCalculate();
             }
         }
 
@@ -99,7 +99,7 @@ namespace WPF_ZipByLimit.ViewModels
             set
             {
                 SetProperty(ref _MaxZipFilesContains, value);
-                //preCalculate();
+                preCalculate();
             }
         }
 
@@ -129,7 +129,7 @@ namespace WPF_ZipByLimit.ViewModels
         public DelegateCommand LoadFoldersCommand { get; set; }
         public DelegateCommand DeleteSelectedFolderCommand { get; set; }
         public DelegateCommand StartZipCommand { get; set; }
-        public DelegateCommand PreCalculateCommand { get; set; }
+        public DelegateCommand<string> MaxSizeTextBoxEnterCommand { get; set; }
 
 
         public MainWindowViewModel()
@@ -142,10 +142,16 @@ namespace WPF_ZipByLimit.ViewModels
             //Todo:把preCalculate触发改造成Command，用户回车，或者控件lostFocus
             //https://stackoverflow.com/questions/26353893/implementing-textbox-lostfocus-event-in-mvvm
             //https://stackoverflow.com/questions/28941294/how-to-use-lostfocus-as-a-command-in-wpf
-            PreCalculateCommand = new DelegateCommand(preCalculate);
+            MaxSizeTextBoxEnterCommand = new DelegateCommand<string>(maxSizeTextBoxEnter);
         }
 
-
+        private void maxSizeTextBoxEnter(string inputText)
+        {
+            int number=0;
+            int.TryParse(inputText, out number);
+            if(number!=0) MaxZipSize = number;
+            preCalculate();
+        }
 
         private bool canStartZip()
         {
