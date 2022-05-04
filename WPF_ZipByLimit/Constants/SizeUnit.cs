@@ -4,6 +4,7 @@
     public enum SizeUnit
     {
         MB,
-        GB
+        GB,
+        KB
     }
 }

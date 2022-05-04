@@ -126,7 +126,15 @@ namespace WPF_ZipByLimit.ViewModels
             set { SetProperty(ref _DataGridSelectedFolder, value); }
         }
 
+        //private double _ProgressBarValue;
+        //public double ProgressBarValue
+        //{
+        //    get { return _ProgressBarValue; }
+        //    set { SetProperty(ref _ProgressBarValue, value); }
+        //}
+
         public DelegateCommand SelectSourceFolderCommand { get; set; }
+        public DelegateCommand AddSourceFolderCommand { get; set; }
         public DelegateCommand SelectTargetFolderCommand { get; set; }
         //public DelegateCommand LoadFoldersCommand { get; set; }
         public DelegateCommand DeleteSelectedFolderCommand { get; set; }
@@ -137,17 +145,38 @@ namespace WPF_ZipByLimit.ViewModels
         public MainWindowViewModel()
         {
             SelectSourceFolderCommand = new DelegateCommand(selectSourceFolder, canSelectSourceFolder);
+            AddSourceFolderCommand = new DelegateCommand(addSourceFolder, canAddSourceFolder);
             SelectTargetFolderCommand = new DelegateCommand(selectTargetFolder, canSelectTargetFolder);
             //LoadFoldersCommand = new DelegateCommand(loadFolders, canLoadFolders);
             DeleteSelectedFolderCommand = new DelegateCommand(deleteSelectedFolder, canDeleteSelectedFolder);
             StartZipCommand = new DelegateCommand(startZip, canStartZip);
-            //Todo:把preCalculate触发改造成Command，用户回车，或者控件lostFocus
-            //https://stackoverflow.com/questions/26353893/implementing-textbox-lostfocus-event-in-mvvm
-            //https://stackoverflow.com/questions/28941294/how-to-use-lostfocus-as-a-command-in-wpf
             MaxSizeTextBoxEnterCommand = new DelegateCommand<string>(maxSizeTextBoxEnter);
 
 
             FolderModelCollection = new ObservableCollection<FolderModel>();
+        }
+
+        private bool canAddSourceFolder()
+        {
+            return true;
+        }
+
+        private async void addSourceFolder()
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(UserInputFolderPath))
+                {
+                    UserInputFolderPath = UserInputFolderPath.Trim();
+                    UserInputFolderPath = UserInputFolderPath.Trim('"');
+                    string path = Path.GetFullPath(UserInputFolderPath);
+                    await loadFolderAsync(path);
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Cannot find the path, please enter again.");
+            }
         }
 
         private void maxSizeTextBoxEnter(string inputText)
@@ -172,8 +201,12 @@ namespace WPF_ZipByLimit.ViewModels
         {
             foreach (FolderModel folderModel in FolderModelCollection)
             {
+                int index = 0;
                 foreach (ZipFileModel zipFileModel in folderModel.ZipFileList)
                 {
+                    index++;
+                    folderModel.CurrentZipFile = zipFileModel.FileName;
+                    folderModel.Progress = (double)index*100 / folderModel.OutputZipCount;
                     List<string> filesPaths = zipFileModel.Files.Select(x => x.FullName).ToList();
                     await createZipAsync(zipFileModel.Path, filesPaths);
                 }
@@ -252,7 +285,7 @@ namespace WPF_ZipByLimit.ViewModels
             //设置输出文件夹的路径为Source文件夹的父级路径
             if (sourceFolderPathes.Count != 0)
             {
-                TargetFolderPath = Directory.GetParent(sourceFolderPathes[0]).FullName;
+                //TargetFolderPath = Directory.GetParent(sourceFolderPathes[0]).FullName;
                 foreach (string path in sourceFolderPathes)
                 {
                     await loadFolderAsync(path);
@@ -278,6 +311,7 @@ namespace WPF_ZipByLimit.ViewModels
                 FolderSize = folderSize
             };
             FolderModelCollection.Add(folder);
+            TargetFolderPath = Directory.GetParent(FolderModelCollection[0].FolderPath)?.FullName;
         }
 
         private async Task loadSubFoldersAsync(string folderPath)
@@ -340,6 +374,9 @@ namespace WPF_ZipByLimit.ViewModels
             long sizeLimit = 0;
             switch (unit)
             {
+                case SizeUnit.KB:
+                    sizeLimit = (long)sizeLimitNum*1024;
+                    break;
                 case SizeUnit.MB:
                     sizeLimit = (long)sizeLimitNum * 1024 * 1024;
                     break;
@@ -347,12 +384,12 @@ namespace WPF_ZipByLimit.ViewModels
                     sizeLimit = (long)sizeLimitNum * 1024 * 1024 * 1024;
                     break;
             }
-
+            folderModel.OverSizedFileList = new List<FileInfo>();
+            folderModel.OverSizedFileCount = 0;
             DirectoryInfo dirInfo = new DirectoryInfo(folderModel.FolderPath);
             List<FileInfo> allFilesInTheFolder = dirInfo.EnumerateFiles("*", SearchOption.TopDirectoryOnly).ToList();
             int index = 1;
             List<ZipFileModel> zipFileModelList = new List<ZipFileModel>();
-            List<FileInfo> overSizedFiles = new List<FileInfo>();
             while (allFilesInTheFolder.Count > 0)
             {
                 string fileName = folderModel.FolderName + "_" + index.ToString("D2") + ".zip";
@@ -362,17 +399,18 @@ namespace WPF_ZipByLimit.ViewModels
                     FileName = fileName,
                     Path = Path.Combine(TargetFolderPath, fileName)
                 };
-                overSizedFiles.AddRange(putFilesInZip(ref zipFileModel, ref allFilesInTheFolder));
+                folderModel.OverSizedFileList.AddRange(putFilesInZip(ref zipFileModel, ref allFilesInTheFolder));
                 zipFileModelList.Add(zipFileModel);
                 index++;
             }
             folderModel.ZipFileList = zipFileModelList;
             folderModel.OutputZipCount = zipFileModelList.Count;
-            if (overSizedFiles.Count > 0)
-            {
-                string filesNames=string.Join("\n",overSizedFiles.Select(x=>x.Name));
-                MessageBox.Show($"Find{overSizedFiles.Count} over size files.\n{filesNames}");
-            }
+            folderModel.OverSizedFileCount = folderModel.OverSizedFileList.Count;
+            //if (overSizedFiles.Count > 0)
+            //{
+            //    string filesNames = string.Join("\n", overSizedFiles.Select(x => x.Name));
+            //    MessageBox.Show($"Find{overSizedFiles.Count} over size files.\n{filesNames}");
+            //}
         }
 
         private List<FileInfo> putFilesInZip(ref ZipFileModel zipFileModel, ref List<FileInfo> filesForZip)

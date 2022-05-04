@@ -66,6 +66,7 @@
     </Compile>
     <Compile Include="Constants\FoldersOrFiles.cs" />
     <Compile Include="Converters\EnumToRadioButtonConverter.cs" />
+    <Compile Include="Converters\NumberToDataGridRowBgColorConverter.cs" />
     <Compile Include="Models\ConstantsAndEnums.cs" />
     <Compile Include="Models\FolderModel.cs" />
     <Compile Include="Constants\SizeUnit.cs" />

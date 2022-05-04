@@ -1,6 +1,7 @@
 ﻿using Prism.Mvvm;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -51,8 +52,22 @@ namespace WPF_ZipByLimit.Models
             get { return _HasSubFolder; }
             set { SetProperty(ref _HasSubFolder, value); }
         }
+        private double _Progress;
+        public double Progress
+        {
+            get { return _Progress; }
+            set { SetProperty(ref _Progress, value); }
+        }
 
-        public List<ZipFileModel> ZipFileList { get; set; } = new List<ZipFileModel>();
+        private int _OverSizedFileCount;
+        public int OverSizedFileCount
+        {
+            get { return _OverSizedFileCount; }
+            set { SetProperty(ref _OverSizedFileCount, value); }
+        }
+
+        public List<FileInfo> OverSizedFileList { get; set; }
+        public List<ZipFileModel> ZipFileList { get; set; }
         //private bool _Removed;
         //public bool Removed
         //{
