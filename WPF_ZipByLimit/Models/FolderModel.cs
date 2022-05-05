@@ -68,6 +68,17 @@ namespace WPF_ZipByLimit.Models
 
         public List<FileInfo> OverSizedFileList { get; set; }
         public List<ZipFileModel> ZipFileList { get; set; }
+
+        private ZipFileModel _ZipResultFile;
+        /// <summary>
+        /// 把多个文件夹压缩成一个文件
+        /// </summary>
+        public ZipFileModel ZipResultFile
+        {
+            get { return _ZipResultFile; }
+            set { SetProperty(ref _ZipResultFile, value); }
+        }
+
         //private bool _Removed;
         //public bool Removed
         //{

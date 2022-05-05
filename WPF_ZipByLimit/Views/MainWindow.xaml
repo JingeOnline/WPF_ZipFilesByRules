@@ -55,13 +55,15 @@
             </GroupBox>
             <!--<Button Content="Load Folders" Margin="0,8,0,8" Command="{Binding LoadFoldersCommand}"/>-->
         </StackPanel>
+        
+        <!--【表格】高度随窗口大小变化-->
         <DataGrid AutoGenerateColumns="False" Grid.Row="1" ItemsSource="{Binding FolderModelCollection}" CanUserAddRows="False" SelectedItem="{Binding DataGridSelectedFolder}" 
                   x:Name="DG_ZipFilesInFolders" LoadingRow="DG_ZipFilesInFolders_LoadingRow">
-            <DataGrid.RowStyle>
-                <Style TargetType="DataGridRow">
+            <!--<DataGrid.RowStyle>
+                <Style TargetType="DataGridCell">
                     <Setter Property="Background" Value="{Binding Path=OverSizedFileCount, Converter={StaticResource BackgroundConverter}}"/>
                 </Style>
-            </DataGrid.RowStyle>
+            </DataGrid.RowStyle>-->
             <DataGrid.Columns>
                 <DataGridTemplateColumn>
                     <DataGridTemplateColumn.CellTemplate>
@@ -74,8 +76,14 @@
                 <DataGridCheckBoxColumn Header="Has Sub-Folder" Binding="{Binding HasSubFolder}" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Folder Size" Width="auto" IsReadOnly="True" Binding="{Binding FolderSize}" ElementStyle="{StaticResource RightAlignCell}"/>
                 <DataGridTextColumn Header="Folder Files" Width="auto" IsReadOnly="True" Binding="{Binding FileCount}" ElementStyle="{StaticResource RightAlignCell}"/>
-                <DataGridTextColumn Header="Beyond Max Size" Width="auto" IsReadOnly="True" Binding="{Binding OverSizedFileCount}" ElementStyle="{StaticResource RightAlignCell}"/>
-                <DataGridTextColumn Header="Output Zip Files" Width="auto" IsReadOnly="True" Binding="{Binding OutputZipCount}"/>
+                <DataGridTextColumn Header="Oversized Files" Width="auto" IsReadOnly="True" Binding="{Binding OverSizedFileCount}" >
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource RightAlignCell}">
+                            <Setter Property="Background" Value="{Binding Path=OverSizedFileCount, Converter={StaticResource BackgroundConverter}}"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Output Zip Files" Width="auto" IsReadOnly="True" Binding="{Binding OutputZipCount}" ElementStyle="{StaticResource RightAlignCell}"/>
                 <DataGridTemplateColumn Header="Progress" Width="*" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -88,6 +96,9 @@
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
+
+        
+        
         <StackPanel Grid.Row="2">
             <Grid>
                 <Grid.ColumnDefinitions>
