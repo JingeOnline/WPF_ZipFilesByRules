@@ -73,9 +73,11 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Folder Name" Width="*" Binding="{Binding FolderName}" IsReadOnly="True"/>
-                <DataGridCheckBoxColumn Header="Has Sub-Folder" Binding="{Binding HasSubFolder}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Sub-Folder" Width="auto" Binding="{Binding SubFolderCount}" IsReadOnly="True" ElementStyle="{StaticResource RightAlignCell}"/>
                 <DataGridTextColumn Header="Folder Size" Width="auto" IsReadOnly="True" Binding="{Binding FolderSize}" ElementStyle="{StaticResource RightAlignCell}"/>
+                <DataGridTextColumn Header="Folder Size Total" Width="auto" IsReadOnly="True" Binding="{Binding FolderSizeTotalToDisplay}" ElementStyle="{StaticResource RightAlignCell}"/>
                 <DataGridTextColumn Header="Folder Files" Width="auto" IsReadOnly="True" Binding="{Binding FileCount}" ElementStyle="{StaticResource RightAlignCell}"/>
+                <DataGridTextColumn Header="Folder Files Total" Width="auto" IsReadOnly="True" Binding="{Binding FileCountTotal}" ElementStyle="{StaticResource RightAlignCell}"/>
                 <DataGridTextColumn Header="Oversized Files" Width="auto" IsReadOnly="True" Binding="{Binding OverSizedFileCount}" >
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource RightAlignCell}">

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO.Compression;
+using System.Windows.Data;
 
 namespace WPF_ZipByLimit.ViewModels
 {
@@ -133,6 +134,10 @@ namespace WPF_ZipByLimit.ViewModels
         public DelegateCommand StartZipCommand { get; set; }
         public DelegateCommand<string> MaxSizeTextBoxEnterCommand { get; set; }
 
+        /// <summary>
+        /// Used for DataGrid Group sort and filter.
+        /// </summary>
+        public CollectionViewSource DataGridViewSource { get; set; }
 
         public MainWindowViewModel()
         {
@@ -175,7 +180,6 @@ namespace WPF_ZipByLimit.ViewModels
             int number = 0;
             int.TryParse(inputText, out number);
             if (number != 0) MaxZipSize = number;
-            //preCalculate();
         }
 
         private bool canStartZip()
@@ -267,18 +271,30 @@ namespace WPF_ZipByLimit.ViewModels
         {
             if (string.IsNullOrEmpty(folderPath)) return;
             string folderName = Path.GetFileName(folderPath);
+            //获取文件夹内的文件数量，不包含下级文件夹
             int filesCount = Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly).Length;
-            bool hasSubFolder = Directory.GetDirectories(folderPath).Length != 0;
+            //获取文件夹内的文件数量，包含所有下级文件夹
+            int filesCountTotal = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories).Length;
+            //获取文件夹的大小，不包含子级文件夹的文件
             DirectoryInfo dirInfo = new DirectoryInfo(folderPath);
             long dirSize = await Task.Run(() => dirInfo.EnumerateFiles("*", SearchOption.TopDirectoryOnly).Sum(file => file.Length));
             string folderSize = getDisplaySizeWithUnit(dirSize);
+            //获取文件夹的大小，包含所有子级文件夹的文件
+            long folderSizeTotal = await Task.Run(() => dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length));
+            string folderSizeTotalToDisplay = getDisplaySizeWithUnit(folderSizeTotal);
+            //所有下级文件夹的数量
+            int subFolderCount = Directory.GetDirectories(folderPath,"*",SearchOption.AllDirectories).Length;
+
             FolderModel folder = new FolderModel()
             {
                 FolderPath = folderPath,
                 FolderName = folderName,
+                SubFolderCount = subFolderCount,
                 FileCount = filesCount,
-                HasSubFolder = hasSubFolder,
-                FolderSize = folderSize
+                FolderSize = folderSize,
+                FileCountTotal = filesCountTotal,
+                FolderSizeTotal= folderSizeTotal,
+                FolderSizeTotalToDisplay =folderSizeTotalToDisplay,
             };
             FolderModelCollection.Add(folder);
             TargetFolderPath = Directory.GetParent(FolderModelCollection[0].FolderPath)?.FullName;
@@ -338,25 +354,58 @@ namespace WPF_ZipByLimit.ViewModels
         private void preCalculate()
         {
             if (FolderModelCollection == null) return;
-            //按文件大小打包
-            if (SelectedZipRule == ZipRule.BySize)
+
+            //只压缩所选文件夹的顶层文件，忽略包含的子文件夹，忽略子文件夹内的文件
+            if (ZipTarget == FoldersOrFiles.ZipFiles)
             {
-                foreach (FolderModel folderModel in FolderModelCollection)
+                //按压缩包大小打包
+                if (SelectedZipRule == ZipRule.BySize)
                 {
-                    preCalculateZipFilesBySize(MaxZipSize, SelectedSizeUnit, folderModel);
+                    foreach (FolderModel folderModel in FolderModelCollection)
+                    {
+                        preCalculateZipFilesBySize(MaxZipSize, SelectedSizeUnit, folderModel);
+                    }
+                }
+                //按包含的文件数量打包
+                else
+                {
+
                 }
             }
-            //按包含的文件数量打包
+
+            //以所选文件夹为单位，打包到压缩文件中，包含该文件夹内的所有子文件夹和子文件
             else
             {
+                //按压缩包大小打包
+                if (SelectedZipRule == ZipRule.BySize)
+                {
+                    foreach(FolderModel folderModel in FolderModelCollection)
+                    {
+                        preCalculateZipFoldersBySize(MaxZipSize, SelectedSizeUnit, folderModel);
+                    }
+                }
+                //按包含的文件夹数量打包
+                else
+                {
 
+                }
             }
+
         }
 
-        private void preCalculateZipFilesBySize(int sizeLimitNum, SizeUnit unit, FolderModel folderModel)
+        private void preCalculateZipFoldersBySize(int maxZipSize, SizeUnit unit, IEnumerable<FolderModel> folderModels)
         {
-            if (sizeLimitNum == 0) return;
-            long sizeLimit = getSizeByUnit(sizeLimitNum,unit);
+            if (maxZipSize == 0) return;
+            long sizeLimit = getSizeByUnit(maxZipSize, unit);
+
+            folderModel.OverSizedFolderList = new List<FolderModel>();
+            folderModel.OverSizedFileCount = 0;
+        }
+
+        private void preCalculateZipFilesBySize(int maxZipSize, SizeUnit unit, FolderModel folderModel)
+        {
+            if (maxZipSize == 0) return;
+            long sizeLimit = getSizeByUnit(maxZipSize,unit);
 
             folderModel.OverSizedFileList = new List<FileInfo>();
             folderModel.OverSizedFileCount = 0;

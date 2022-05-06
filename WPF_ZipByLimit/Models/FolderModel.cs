@@ -23,17 +23,52 @@ namespace WPF_ZipByLimit.Models
             set { SetProperty(ref _FolderPath, value); }
         }
         private string _FolderSize;
+        /// <summary>
+        /// 文件夹的大小，不包含子级文件夹
+        /// </summary>
         public string FolderSize 
         {
             get { return _FolderSize; }
             set { SetProperty(ref _FolderSize,value); }
         }
         private int _FileCount;
-        public int FileCount 
+        /// <summary>
+        /// 文件夹中顶层的文件数量，不包含子级文件夹，也不包含次级文件
+        /// </summary>
+        public int FileCount
         {
             get { return _FileCount; }
             set { SetProperty(ref _FileCount, value); }
         }
+
+        private int _FileCountTotal;
+        public int FileCountTotal
+        {
+            get { return _FileCountTotal; }
+            set { SetProperty(ref _FileCountTotal, value); }
+        }
+
+        private long _FolderSizeTotal;
+        /// <summary>
+        /// 文件夹的大小，包含所有下级文件夹
+        /// </summary>
+        public long FolderSizeTotal
+        {
+            get { return _FolderSizeTotal; }
+            set { SetProperty(ref _FolderSizeTotal, value); }
+        }
+
+        private string _FolderSizeTotalToDisplay;
+        /// <summary>
+        /// 文件夹的大小，显示文字，包含单位
+        /// </summary>
+        public string FolderSizeTotalToDisplay
+        {
+            get { return _FolderSizeTotalToDisplay; }
+            set { SetProperty(ref _FolderSizeTotalToDisplay,value); }
+        }
+
+
         private int _OutputZipCount;
         public int OutputZipCount 
         {
@@ -46,11 +81,14 @@ namespace WPF_ZipByLimit.Models
             get { return _CurrentZipFile; }
             set { SetProperty(ref _CurrentZipFile, value); }
         }
-        private bool _HasSubFolder;
-        public bool HasSubFolder
+        private int _SubFolderCount;
+        /// <summary>
+        /// 所有下级文件夹的数量
+        /// </summary>
+        public int SubFolderCount
         {
-            get { return _HasSubFolder; }
-            set { SetProperty(ref _HasSubFolder, value); }
+            get { return _SubFolderCount; }
+            set { SetProperty(ref _SubFolderCount, value); }
         }
         private double _Progress;
         public double Progress
@@ -79,6 +117,16 @@ namespace WPF_ZipByLimit.Models
             set { SetProperty(ref _ZipResultFile, value); }
         }
 
+        
+        public bool _IsOverSized;
+        /// <summary>
+        /// 当以文件夹为单位压缩的时候，该文件夹是否超过压缩文件大小限制
+        /// </summary>
+        public bool IsOverSized
+        {
+            get { return _IsOverSized; }
+            set { SetProperty(ref _IsOverSized, value); }
+        }
         //private bool _Removed;
         //public bool Removed
         //{
