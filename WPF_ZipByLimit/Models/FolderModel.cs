@@ -11,12 +11,18 @@ namespace WPF_ZipByLimit.Models
     public class FolderModel: BindableBase
     {
         private string _FolderName;
+        /// <summary>
+        /// 文件夹的名称
+        /// </summary>
         public string FolderName 
         {
             get { return _FolderName; }
             set { SetProperty(ref _FolderName, value); }
         }
         private string _FolderPath;
+        /// <summary>
+        /// 文件夹的路径
+        /// </summary>
         public string FolderPath 
         {
             get { return _FolderPath; }
@@ -118,7 +124,7 @@ namespace WPF_ZipByLimit.Models
         }
 
         
-        public bool _IsOverSized;
+        private bool _IsOverSized;
         /// <summary>
         /// 当以文件夹为单位压缩的时候，该文件夹是否超过压缩文件大小限制
         /// </summary>

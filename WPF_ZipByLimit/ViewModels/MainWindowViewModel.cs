@@ -12,16 +12,17 @@ using System.Linq;
 using System.Collections.Generic;
 using System.IO.Compression;
 using System.Windows.Data;
+using System.Diagnostics;
 
 namespace WPF_ZipByLimit.ViewModels
 {
     public class MainWindowViewModel : BindableBase
     {
-        private FoldersOrFiles _ZipTarget = FoldersOrFiles.ZipFiles;
-        public FoldersOrFiles ZipTarget
+        private FoldersOrFiles _ZipUnit = FoldersOrFiles.ZipFiles;
+        public FoldersOrFiles ZipUnit
         {
-            get { return _ZipTarget; }
-            set { SetProperty(ref _ZipTarget, value); }
+            get { return _ZipUnit; }
+            set { SetProperty(ref _ZipUnit, value); }
         }
 
         private ZipRule _SelectedZipRule;
@@ -194,18 +195,35 @@ namespace WPF_ZipByLimit.ViewModels
 
         private async Task startZipFiles()
         {
-            foreach (FolderModel folderModel in FolderModelCollection)
+            if (ZipUnit == FoldersOrFiles.ZipFiles)
             {
-                int index = 0;
-                foreach (ZipFileModel zipFileModel in folderModel.ZipFileList)
+                foreach (FolderModel folderModel in FolderModelCollection)
                 {
-                    index++;
-                    folderModel.CurrentZipFile = zipFileModel.FileName;
-                    folderModel.Progress = (double)index*100 / folderModel.OutputZipCount;
-                    List<string> filesPaths = zipFileModel.Files.Select(x => x.FullName).ToList();
-                    await createZipAsync(zipFileModel.Path, filesPaths);
+                    int index = 0;
+                    foreach (ZipFileModel zipFileModel in folderModel.ZipFileList)
+                    {
+                        index++;
+                        folderModel.CurrentZipFile = zipFileModel.FileName;
+                        folderModel.Progress = (double)index * 100 / folderModel.OutputZipCount;
+                        List<string> filesPaths = zipFileModel.ContainedFiles.Select(x => x.FullName).ToList();
+                        await createZipAsync(zipFileModel.Path, filesPaths);
+                    }
                 }
             }
+            else
+            {
+                IEnumerable<IGrouping<ZipFileModel,FolderModel>>  groupResult = FolderModelCollection.GroupBy(x=>x.ZipResultFile);
+                foreach(IGrouping<ZipFileModel, FolderModel> group in groupResult)
+                {
+                    List<string> filePaths = new List<string>();
+                    foreach(FolderModel folderModel in group)
+                    {
+                        filePaths.Add(folderModel.FolderPath);
+                    }
+                }
+
+            }
+
             MessageBox.Show("Zip finish.", "Finish", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
@@ -283,7 +301,7 @@ namespace WPF_ZipByLimit.ViewModels
             long folderSizeTotal = await Task.Run(() => dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length));
             string folderSizeTotalToDisplay = getDisplaySizeWithUnit(folderSizeTotal);
             //所有下级文件夹的数量
-            int subFolderCount = Directory.GetDirectories(folderPath,"*",SearchOption.AllDirectories).Length;
+            int subFolderCount = Directory.GetDirectories(folderPath, "*", SearchOption.AllDirectories).Length;
 
             FolderModel folder = new FolderModel()
             {
@@ -293,10 +311,11 @@ namespace WPF_ZipByLimit.ViewModels
                 FileCount = filesCount,
                 FolderSize = folderSize,
                 FileCountTotal = filesCountTotal,
-                FolderSizeTotal= folderSizeTotal,
-                FolderSizeTotalToDisplay =folderSizeTotalToDisplay,
+                FolderSizeTotal = folderSizeTotal,
+                FolderSizeTotalToDisplay = folderSizeTotalToDisplay,
             };
             FolderModelCollection.Add(folder);
+            //设置压缩包的输出路径
             TargetFolderPath = Directory.GetParent(FolderModelCollection[0].FolderPath)?.FullName;
         }
 
@@ -356,7 +375,7 @@ namespace WPF_ZipByLimit.ViewModels
             if (FolderModelCollection == null) return;
 
             //只压缩所选文件夹的顶层文件，忽略包含的子文件夹，忽略子文件夹内的文件
-            if (ZipTarget == FoldersOrFiles.ZipFiles)
+            if (ZipUnit == FoldersOrFiles.ZipFiles)
             {
                 //按压缩包大小打包
                 if (SelectedZipRule == ZipRule.BySize)
@@ -379,10 +398,7 @@ namespace WPF_ZipByLimit.ViewModels
                 //按压缩包大小打包
                 if (SelectedZipRule == ZipRule.BySize)
                 {
-                    foreach(FolderModel folderModel in FolderModelCollection)
-                    {
-                        preCalculateZipFoldersBySize(MaxZipSize, SelectedSizeUnit, folderModel);
-                    }
+                    preCalculateZipFoldersBySize(MaxZipSize, SelectedSizeUnit);
                 }
                 //按包含的文件夹数量打包
                 else
@@ -393,19 +409,64 @@ namespace WPF_ZipByLimit.ViewModels
 
         }
 
-        private void preCalculateZipFoldersBySize(int maxZipSize, SizeUnit unit, IEnumerable<FolderModel> folderModels)
+        private void preCalculateZipFoldersBySize(int maxZipSize, SizeUnit unit)
         {
             if (maxZipSize == 0) return;
             long sizeLimit = getSizeByUnit(maxZipSize, unit);
+            //计算当前压缩包的大小
+            long zipFileSize = 0;
+            //用来给输出的压缩包命名
+            int index = 1;
+            //输出的压缩包
+            ZipFileModel zipFileModel = getNewZipFileModel(index, sizeLimit);
+            //把超过大小的文件夹，IsOverSized = true
+            FolderModelCollection.Where(x => x.FolderSizeTotal > sizeLimit).ToList().ForEach(x => x.IsOverSized = true);
 
-            folderModel.OverSizedFolderList = new List<FolderModel>();
-            folderModel.OverSizedFileCount = 0;
+            foreach (FolderModel folderModel in FolderModelCollection)
+            {
+                //如果文件夹过大，或者已经被指定了Zip压缩包，则忽略
+                if (folderModel.ZipResultFile != null || folderModel.IsOverSized) continue;
+
+                //尝试从所有文件夹集合中找出能够填满该Zip文件的文件夹
+                tryPutFolderIntoZipFile(sizeLimit, FolderModelCollection, zipFileModel);
+                index++;
+                folderModel.ZipResultFile = getNewZipFileModel(index, sizeLimit);
+            }
+
+            foreach (FolderModel folderModel in FolderModelCollection)
+            {
+                Debug.WriteLine(folderModel.FolderName + ", " + folderModel.ZipResultFile?.FileName);
+            }
+        }
+
+        //通过迭代的方式，找到能够满足压缩大小限制的所有文件夹，并把这些文件夹的ZipResultFile属性赋值为当前的压缩文件
+        private void tryPutFolderIntoZipFile(long leftSpace, IEnumerable<FolderModel> folderModelList, ZipFileModel zipFileModel)
+        {
+            List<FolderModel> folderUnzipedList = folderModelList.Where(x => x.ZipResultFile == null).OrderByDescending(x => x.FolderSizeTotal).ToList();
+            for (int i = 0; i < folderUnzipedList.Count(); i++)
+            {
+                if (folderUnzipedList[i].FolderSizeTotal < leftSpace)
+                {
+                    folderUnzipedList[i].ZipResultFile = zipFileModel;
+                    Debug.WriteLine("LeftSpace=" + leftSpace + " TryPut - " + folderUnzipedList[i].FolderName + ", " + folderUnzipedList[i].ZipResultFile?.FileName);
+                    tryPutFolderIntoZipFile(leftSpace - folderUnzipedList[i].FolderSizeTotal, folderModelList, zipFileModel);
+                    return;
+                }
+            }
+        }
+
+        private ZipFileModel getNewZipFileModel(int index, long sizeLimit)
+        {
+            string zipFileName = Path.GetDirectoryName(TargetFolderPath) + "_" + index.ToString("D2") + ".zip";
+            string zipFilePath = Path.Combine(TargetFolderPath, zipFileName);
+            ZipFileModel zipFileModel = new ZipFileModel() { FileName = zipFileName, Path = zipFilePath, SizeLimit = sizeLimit };
+            return zipFileModel;
         }
 
         private void preCalculateZipFilesBySize(int maxZipSize, SizeUnit unit, FolderModel folderModel)
         {
             if (maxZipSize == 0) return;
-            long sizeLimit = getSizeByUnit(maxZipSize,unit);
+            long sizeLimit = getSizeByUnit(maxZipSize, unit);
 
             folderModel.OverSizedFileList = new List<FileInfo>();
             folderModel.OverSizedFileCount = 0;
@@ -418,12 +479,12 @@ namespace WPF_ZipByLimit.ViewModels
             List<ZipFileModel> zipFileModelList = new List<ZipFileModel>();
             while (allFilesInTheFolder.Count > 0)
             {
-                string fileName = folderModel.FolderName + "_" + index.ToString("D2") + ".zip";
+                string zipFileName = folderModel.FolderName + "_" + index.ToString("D2") + ".zip";
                 ZipFileModel zipFileModel = new ZipFileModel()
                 {
                     SizeLimit = sizeLimit,
-                    FileName = fileName,
-                    Path = Path.Combine(TargetFolderPath, fileName)
+                    FileName = zipFileName,
+                    Path = Path.Combine(TargetFolderPath, zipFileName)
                 };
                 folderModel.OverSizedFileList.AddRange(putFilesInZip(ref zipFileModel, ref allFilesInTheFolder));
                 zipFileModelList.Add(zipFileModel);
@@ -490,7 +551,7 @@ namespace WPF_ZipByLimit.ViewModels
             {
                 filesForZip.Remove(fileInfo);
             }
-            zipFileModel.Files = zipFiles;
+            zipFileModel.ContainedFiles = zipFiles;
             return overSizedFiles;
         }
 
