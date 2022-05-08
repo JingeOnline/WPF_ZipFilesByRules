@@ -49,8 +49,8 @@
             <!--<TextBlock Text="* Iterate all sub-folders if exist." Foreground="Gray" HorizontalAlignment="Right"/>-->
             <GroupBox Header="Zip Target" Margin="0,4,0,4">
                 <StackPanel Orientation="Horizontal">
-                    <RadioButton Content="Zip Files In Folder" Margin="0,0,8,0" IsChecked="{Binding Path=ZipTarget, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:FoldersOrFiles.ZipFiles}}"/>
-                    <RadioButton Content="Zip Selected Folders" IsChecked="{Binding Path=ZipTarget, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:FoldersOrFiles.ZipFolders}}"/>
+                    <RadioButton Content="Zip Files In Folder" Margin="0,0,8,0" IsChecked="{Binding Path=ZipUnit, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:FoldersOrFiles.ZipFiles}}"/>
+                    <RadioButton Content="Zip Selected Folders" IsChecked="{Binding Path=ZipUnit, Converter={StaticResource EnumConverter}, ConverterParameter={x:Static constants:FoldersOrFiles.ZipFolders}}"/>
                 </StackPanel>
             </GroupBox>
             <!--<Button Content="Load Folders" Margin="0,8,0,8" Command="{Binding LoadFoldersCommand}"/>-->

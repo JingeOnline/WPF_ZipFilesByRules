@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.IO.Compression;
 using System.Windows.Data;
 using System.Diagnostics;
+using Ionic.Zip;
 
 namespace WPF_ZipByLimit.ViewModels
 {
@@ -167,7 +168,7 @@ namespace WPF_ZipByLimit.ViewModels
                     UserInputFolderPath = UserInputFolderPath.Trim();
                     UserInputFolderPath = UserInputFolderPath.Trim('"');
                     string path = Path.GetFullPath(UserInputFolderPath);
-                    await loadFolderAsync(path);
+                    await loadFolderIntoDataGridAsync(path);
                 }
             }
             catch
@@ -190,10 +191,11 @@ namespace WPF_ZipByLimit.ViewModels
 
         private void startZip()
         {
-            startZipFiles();
+            startZipFilesAsync();
+            //test();
         }
 
-        private async Task startZipFiles()
+        private async Task startZipFilesAsync()
         {
             if (ZipUnit == FoldersOrFiles.ZipFiles)
             {
@@ -206,20 +208,21 @@ namespace WPF_ZipByLimit.ViewModels
                         folderModel.CurrentZipFile = zipFileModel.FileName;
                         folderModel.Progress = (double)index * 100 / folderModel.OutputZipCount;
                         List<string> filesPaths = zipFileModel.ContainedFiles.Select(x => x.FullName).ToList();
-                        await createZipAsync(zipFileModel.Path, filesPaths);
+                        await createZipFromFilesAsync(zipFileModel.Path, filesPaths);
                     }
                 }
             }
             else
             {
-                IEnumerable<IGrouping<ZipFileModel,FolderModel>>  groupResult = FolderModelCollection.GroupBy(x=>x.ZipResultFile);
-                foreach(IGrouping<ZipFileModel, FolderModel> group in groupResult)
+                IEnumerable<IGrouping<ZipFileModel, FolderModel>> groupResult = FolderModelCollection.GroupBy(x => x.ZipResultFile);
+                foreach (IGrouping<ZipFileModel, FolderModel> group in groupResult)
                 {
                     List<string> filePaths = new List<string>();
-                    foreach(FolderModel folderModel in group)
+                    foreach (FolderModel folderModel in group)
                     {
                         filePaths.Add(folderModel.FolderPath);
                     }
+                    await createZipFromFoldersAsync(group.Key.Path, filePaths);
                 }
 
             }
@@ -280,12 +283,12 @@ namespace WPF_ZipByLimit.ViewModels
                 //TargetFolderPath = Directory.GetParent(sourceFolderPathes[0]).FullName;
                 foreach (string path in sourceFolderPathes)
                 {
-                    await loadFolderAsync(path);
+                    await loadFolderIntoDataGridAsync(path);
                 }
             }
         }
 
-        private async Task loadFolderAsync(string folderPath)
+        private async Task loadFolderIntoDataGridAsync(string folderPath)
         {
             if (string.IsNullOrEmpty(folderPath)) return;
             string folderName = Path.GetFileName(folderPath);
@@ -325,7 +328,7 @@ namespace WPF_ZipByLimit.ViewModels
             string[] subFolderPathArray = Directory.GetDirectories(folderPath);
             foreach (string subFolderPath in subFolderPathArray)
             {
-                await loadFolderAsync(subFolderPath);
+                await loadFolderIntoDataGridAsync(subFolderPath);
             }
         }
 
@@ -417,8 +420,6 @@ namespace WPF_ZipByLimit.ViewModels
             long zipFileSize = 0;
             //用来给输出的压缩包命名
             int index = 1;
-            //输出的压缩包
-            ZipFileModel zipFileModel = getNewZipFileModel(index, sizeLimit);
             //把超过大小的文件夹，IsOverSized = true
             FolderModelCollection.Where(x => x.FolderSizeTotal > sizeLimit).ToList().ForEach(x => x.IsOverSized = true);
 
@@ -426,11 +427,11 @@ namespace WPF_ZipByLimit.ViewModels
             {
                 //如果文件夹过大，或者已经被指定了Zip压缩包，则忽略
                 if (folderModel.ZipResultFile != null || folderModel.IsOverSized) continue;
-
+                //输出的压缩包
+                ZipFileModel zipFileModel = getNewZipFileModel(index, sizeLimit);
                 //尝试从所有文件夹集合中找出能够填满该Zip文件的文件夹
                 tryPutFolderIntoZipFile(sizeLimit, FolderModelCollection, zipFileModel);
                 index++;
-                folderModel.ZipResultFile = getNewZipFileModel(index, sizeLimit);
             }
 
             foreach (FolderModel folderModel in FolderModelCollection)
@@ -457,7 +458,7 @@ namespace WPF_ZipByLimit.ViewModels
 
         private ZipFileModel getNewZipFileModel(int index, long sizeLimit)
         {
-            string zipFileName = Path.GetDirectoryName(TargetFolderPath) + "_" + index.ToString("D2") + ".zip";
+            string zipFileName = Path.GetFileName(TargetFolderPath) + "_" + index.ToString("D2") + ".zip";
             string zipFilePath = Path.Combine(TargetFolderPath, zipFileName);
             ZipFileModel zipFileModel = new ZipFileModel() { FileName = zipFileName, Path = zipFilePath, SizeLimit = sizeLimit };
             return zipFileModel;
@@ -561,7 +562,7 @@ namespace WPF_ZipByLimit.ViewModels
         /// <param name="zipFilePath">压缩包的输出路径</param>
         /// <param name="filePathList">待压缩的文件路径列表</param>
         /// <returns></returns>
-        private async Task createZipAsync(string zipFilePath, List<string> filePathList)
+        private async Task createZipFromFilesAsync(string zipFilePath, List<string> filePathList)
         {
             await Task.Run(() =>
             {
@@ -569,13 +570,39 @@ namespace WPF_ZipByLimit.ViewModels
                 try
                 {
                     //创建并打开zip文件
-                    using (var zip = ZipFile.Open(zipFilePath, ZipArchiveMode.Create))
+                    using (ZipArchive zipArchive = System.IO.Compression.ZipFile.Open(zipFilePath, ZipArchiveMode.Create))
                     {
                         foreach (var filePath in filePathList)
                         {
                             // 向zip文件中添加文件
-                            zip.CreateEntryFromFile(filePath, Path.GetFileName(filePath), CompressionLevel.Optimal);
+                            zipArchive.CreateEntryFromFile(filePath, Path.GetFileName(filePath), CompressionLevel.Optimal);
                         }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Zip Error Occur", MessageBoxButton.OK, MessageBoxImage.Error);
+                    throw ex;
+                }
+
+            });
+        }
+
+        private async Task createZipFromFoldersAsync(string zipFilePath, List<string> folderPathList)
+        {
+            await Task.Run(() =>
+            {
+
+                try
+                {
+                    //创建并打开zip文件
+                    using (Ionic.Zip.ZipFile zipFile=new Ionic.Zip.ZipFile(System.Text.Encoding.UTF8))
+                    {
+                        foreach(string folderPath in folderPathList)
+                        {
+                            zipFile.AddDirectory(folderPath,Path.GetFileName(folderPath));
+                        }
+                        zipFile.Save(zipFilePath);
                     }
                 }
                 catch (Exception ex)
