@@ -14,6 +14,7 @@
                 <x:Type TypeName="constants:SizeUnit"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
+        <BooleanToVisibilityConverter x:Key="Bool2VisiConverter"/>
         <cvt:EnumToRadioButtonConverter x:Key="EnumConverter"/>
         <cvt:NumberToDataGridRowBgColorConverter x:Key="BackgroundConverter"/>
         <Style TargetType="{x:Type TextBlock}" x:Key="RightAlignCell">
@@ -55,7 +56,7 @@
             </GroupBox>
             <!--<Button Content="Load Folders" Margin="0,8,0,8" Command="{Binding LoadFoldersCommand}"/>-->
         </StackPanel>
-        
+
         <!--【表格】高度随窗口大小变化-->
         <DataGrid AutoGenerateColumns="False" Grid.Row="1" ItemsSource="{Binding FolderModelCollection}" CanUserAddRows="False" SelectedItem="{Binding DataGridSelectedFolder}" 
                   x:Name="DG_ZipFilesInFolders" LoadingRow="DG_ZipFilesInFolders_LoadingRow">
@@ -99,8 +100,8 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        
-        
+
+
         <StackPanel Grid.Row="2">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -171,6 +172,22 @@
                     </Hyperlink>
                 </TextBlock>
             </StackPanel>
+            <!--这里把错误消息绑定到了StackPanel上，之所以不用ListBox和ListView，是因为他们两个属性太多，包括选择，高亮什么的属性，不好去除。-->
+            <ItemsControl ItemsSource="{Binding ErrorMessageCollection}"
+                          Visibility="{Binding IsErrorMessagesVisiable,Mode=OneWay,Converter={StaticResource Bool2VisiConverter}}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Vertical"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <!--绑定List<string>中的string-->
+                        <TextBlock Text="{Binding ., Mode=OneWay}" FontWeight="Bold" Foreground="Red" HorizontalAlignment="Right"
+                                   Margin="4,0"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
             <Button Content="Start Zip" Margin="0,4,0,0" Command="{Binding StartZipCommand}"/>
         </StackPanel>
         <TextBlock Grid.Row="3" Text="Developed By Jinge Zhang" HorizontalAlignment="Right" Margin="0,0,0,-6" Foreground="Gray"/>

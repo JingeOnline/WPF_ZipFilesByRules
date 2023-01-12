@@ -14,6 +14,7 @@ using System.IO.Compression;
 using System.Windows.Data;
 using System.Diagnostics;
 using Ionic.Zip;
+using System.Collections.Specialized;
 
 namespace WPF_ZipByLimit.ViewModels
 {
@@ -129,6 +130,33 @@ namespace WPF_ZipByLimit.ViewModels
             set { SetProperty(ref _DataGridSelectedFolder, value); }
         }
 
+
+        //private bool _IsErrorMessagesVisiable;
+        public bool IsErrorMessagesVisiable
+        {
+            get
+            {
+                if (ErrorMessageCollection == null)
+                {
+                    return false;
+                }
+                else if (ErrorMessageCollection.Count == 0)
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            //get { return _IsErrorMessagesVisiable; }
+            //set { SetProperty(ref _IsErrorMessagesVisiable,value); }
+        }
+
+
+        public ObservableCollection<string> ErrorMessageCollection { get; set; } = new ObservableCollection<string>() { };
+
+
         public DelegateCommand SelectSourceFolderCommand { get; set; }
         public DelegateCommand AddSourceFolderCommand { get; set; }
         public DelegateCommand SelectTargetFolderCommand { get; set; }
@@ -150,8 +178,15 @@ namespace WPF_ZipByLimit.ViewModels
             StartZipCommand = new DelegateCommand(startZip, canStartZip);
             MaxSizeTextBoxEnterCommand = new DelegateCommand<string>(maxSizeTextBoxEnter);
 
+            //当错误消息列表发生变化的时候，更新Visibility属性
+            ErrorMessageCollection.CollectionChanged += OnErrorMessageCollectionChanged;
 
             FolderModelCollection = new ObservableCollection<FolderModel>();
+        }
+
+        private void OnErrorMessageCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            RaisePropertyChanged(nameof(IsErrorMessagesVisiable));
         }
 
         private bool canAddSourceFolder()
@@ -177,16 +212,37 @@ namespace WPF_ZipByLimit.ViewModels
             }
         }
 
+        /// <summary>
+        /// 当用户在文本框中输入“要压缩的文件大小”，并按下回车。检查输入是否合法。
+        /// </summary>
+        /// <param name="inputText"></param>
         private void maxSizeTextBoxEnter(string inputText)
         {
-            int number = 0;
-            int.TryParse(inputText, out number);
-            if (number != 0) MaxZipSize = number;
+            //int number = 0;
+            string errorMessage = "● Max zip size is integer only.";
+            int.TryParse(inputText, out int number);
+            if (number != 0)
+            {
+                MaxZipSize = number;
+                if(ErrorMessageCollection.Contains(errorMessage))
+                {
+                    ErrorMessageCollection.Remove(errorMessage);
+                }
+            }
+            else
+            {
+                if (!ErrorMessageCollection.Contains(errorMessage))
+                {
+                    ErrorMessageCollection.Add(errorMessage);
+                }
+            }
         }
 
         private bool canStartZip()
         {
-            return true;
+            //return true;
+            //TODO:检测是否可以执行，这里没有被触发。
+            return ErrorMessageCollection.Count == 0;
         }
 
         private void startZip()
@@ -596,11 +652,11 @@ namespace WPF_ZipByLimit.ViewModels
                 try
                 {
                     //创建并打开zip文件
-                    using (Ionic.Zip.ZipFile zipFile=new Ionic.Zip.ZipFile(System.Text.Encoding.UTF8))
+                    using (Ionic.Zip.ZipFile zipFile = new Ionic.Zip.ZipFile(System.Text.Encoding.UTF8))
                     {
-                        foreach(string folderPath in folderPathList)
+                        foreach (string folderPath in folderPathList)
                         {
-                            zipFile.AddDirectory(folderPath,Path.GetFileName(folderPath));
+                            zipFile.AddDirectory(folderPath, Path.GetFileName(folderPath));
                         }
                         zipFile.Save(zipFilePath);
                     }
