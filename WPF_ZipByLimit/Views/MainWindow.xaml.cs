@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Text.RegularExpressions;
+using System.Windows;
 
 namespace WPF_ZipByLimit.Views
 {
@@ -16,6 +17,13 @@ namespace WPF_ZipByLimit.Views
         private void DG_ZipFilesInFolders_LoadingRow(object sender, System.Windows.Controls.DataGridRowEventArgs e)
         {
             e.Row.Header = (e.Row.GetIndex() + 1).ToString();
+        }
+
+        //设置在TextBox中只允许输入整数
+        private void TextBox_AllowIntegerOnly(object sender, System.Windows.Input.TextCompositionEventArgs e)
+        {
+            Regex regex = new Regex("[^0-9]+");
+            e.Handled = regex.IsMatch(e.Text);
         }
     }
 }

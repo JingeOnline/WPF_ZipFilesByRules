@@ -4,10 +4,11 @@
         xmlns:prism="http://prismlibrary.com/"
         prism:ViewModelLocator.AutoWireViewModel="True"
         xmlns:local="clr-namespace:WPF_ZipByLimit.Views"
+        xmlns:validation="clr-namespace:WPF_ZipByLimit.ValidationRules"
         xmlns:cvt="clr-namespace:WPF_ZipByLimit.Converters"
         xmlns:constants="clr-namespace:WPF_ZipByLimit.Constants"
         xmlns:System="clr-namespace:System;assembly=mscorlib"
-        Title="Zip A Folder By Rules" Height="600" Width="780">
+        Title="Zip A Folder By Rules" Height="600" Width="880">
     <Window.Resources>
         <ObjectDataProvider x:Key="SizeUnitEnum" MethodName="GetValues" ObjectType="{x:Type System:Enum}">
             <ObjectDataProvider.MethodParameters>
@@ -73,7 +74,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Folder Name" Width="*" Binding="{Binding FolderName}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Folder Name" Width="auto" Binding="{Binding FolderName}" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Sub-Folder" Width="auto" Binding="{Binding SubFolderCount}" IsReadOnly="True" ElementStyle="{StaticResource RightAlignCell}"/>
                 <DataGridTextColumn Header="Folder Size" Width="auto" IsReadOnly="True" Binding="{Binding FolderSize}" ElementStyle="{StaticResource RightAlignCell}"/>
                 <DataGridTextColumn Header="Folder Size Total" Width="auto" IsReadOnly="True" Binding="{Binding FolderSizeTotalToDisplay}" ElementStyle="{StaticResource RightAlignCell}"/>
@@ -127,10 +128,19 @@
                             <RowDefinition Height="auto"/>
                         </Grid.RowDefinitions>
                         <Label Content="Max zip size:"/>
-                        <TextBox x:Name="MaxSizeTextBox" Grid.Column="1" VerticalContentAlignment="Center" Margin="8,0,0,0" Text="{Binding MaxZipSize,Mode=TwoWay,UpdateSourceTrigger=LostFocus}">
-                            <TextBox.InputBindings>
+                        <TextBox x:Name="MaxSizeTextBox" Grid.Column="1" VerticalContentAlignment="Center" Margin="8,0,0,0" 
+                                 Text="{Binding MaxZipSize,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged, Delay=1000}"
+                                 PreviewTextInput="TextBox_AllowIntegerOnly">
+                            <!--<TextBox.InputBindings>
                                 <KeyBinding Command="{Binding MaxSizeTextBoxEnterCommand}" CommandParameter="{Binding Path=Text,ElementName=MaxSizeTextBox}" Key="Return"/>
-                            </TextBox.InputBindings>
+                            </TextBox.InputBindings>-->
+                            <!--<TextBox.Text>
+                                <Binding Path="MaxZipSize" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" Delay="1000">
+                                    <Binding.ValidationRules>
+                                        <validation:StringToIntValidationRule ValidationStep="RawProposedValue"/>
+                                    </Binding.ValidationRules>
+                                </Binding>
+                            </TextBox.Text>-->
                         </TextBox>
                         <ComboBox Grid.Column="2" ItemsSource="{Binding Source={StaticResource SizeUnitEnum}}" SelectedItem="{Binding SelectedSizeUnit}" Width="64" Margin="8,0,0,0"/>
                         <Label Content="Delete files after zip:" Grid.Row="1"/>
@@ -152,7 +162,10 @@
                             <RowDefinition Height="auto"/>
                         </Grid.RowDefinitions>
                         <Label Content="Max file amount:"/>
-                        <TextBox Grid.Column="1" VerticalContentAlignment="Center" Margin="8,0,0,0" Text="{Binding MaxZipFilesContains,Mode=TwoWay}"/>
+                        <TextBox Grid.Column="1" x:Name="MaxZipFileNumber_TextBox"
+                                 VerticalContentAlignment="Center" Margin="8,0,0,0" 
+                                 Text="{Binding MaxZipFilesContains,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged,Delay=1000}"
+                                 PreviewTextInput="TextBox_AllowIntegerOnly"/>
                         <Label Content="Delete files after zip:" Grid.Row="1"/>
                         <CheckBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0" IsChecked="{Binding DeleteFilesAfterZip, Mode=TwoWay}"/>
                         <Label Content="Delete folder after zip:" Grid.Row="2"/>

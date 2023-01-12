@@ -75,6 +75,7 @@
     <Compile Include="Constants\SizeUnit.cs" />
     <Compile Include="Models\ZipFileModel.cs" />
     <Compile Include="Constants\ZipRule.cs" />
+    <Compile Include="ValidationRules\StringToIntValidationRule.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
     <Compile Include="Views\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

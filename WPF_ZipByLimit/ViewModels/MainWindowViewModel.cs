@@ -87,25 +87,84 @@ namespace WPF_ZipByLimit.ViewModels
             set { SetProperty(ref _FolderModelCollection, value); }
         }
 
-        private int _MaxZipSize;
+        private int _MaxZipSize = 1;
         public int MaxZipSize
         {
             get { return _MaxZipSize; }
             set
             {
                 SetProperty(ref _MaxZipSize, value);
-                preCalculate();
+                if (MaxZipSizeValidation(value))
+                {
+                    preCalculate();
+                }
+                StartZipCommand.RaiseCanExecuteChanged();
+
             }
         }
 
-        private int _MaxZipFilesContains;
+        /// <summary>
+        /// 当MaxZipSize=0时，提示用户错误信息。
+        /// </summary>
+        /// <param name="size"></param>
+        private bool MaxZipSizeValidation(int size)
+        {
+            string errorMessage = "● Max zip size can not be 0.";
+            if (size != 0)
+            {
+                if (ErrorMessageCollection.Contains(errorMessage))
+                {
+                    ErrorMessageCollection.Remove(errorMessage);
+                }
+                return true;
+            }
+            else
+            {
+                if (!ErrorMessageCollection.Contains(errorMessage))
+                {
+                    ErrorMessageCollection.Add(errorMessage);
+                }
+                return false;
+            }
+        }
+
+        private int _MaxZipFilesContains = 1;
         public int MaxZipFilesContains
         {
             get { return _MaxZipFilesContains; }
             set
             {
                 SetProperty(ref _MaxZipFilesContains, value);
-                preCalculate();
+                if (MaxZipFilesContainsValidation(value))
+                {
+                    preCalculate();
+                }
+                StartZipCommand.RaiseCanExecuteChanged();
+            }
+        }
+        /// <summary>
+        /// 当MaxZipFilesContains=0时，提示用户错误信息。
+        /// </summary>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        private bool MaxZipFilesContainsValidation(int count)
+        {
+            string errorMessage = "● Max file amount can not be 0.";
+            if (count != 0)
+            {
+                if (ErrorMessageCollection.Contains(errorMessage))
+                {
+                    ErrorMessageCollection.Remove(errorMessage);
+                }
+                return true;
+            }
+            else
+            {
+                if (!ErrorMessageCollection.Contains(errorMessage))
+                {
+                    ErrorMessageCollection.Add(errorMessage);
+                }
+                return false;
             }
         }
 
@@ -162,7 +221,6 @@ namespace WPF_ZipByLimit.ViewModels
         public DelegateCommand SelectTargetFolderCommand { get; set; }
         public DelegateCommand DeleteSelectedFolderCommand { get; set; }
         public DelegateCommand StartZipCommand { get; set; }
-        public DelegateCommand<string> MaxSizeTextBoxEnterCommand { get; set; }
 
         /// <summary>
         /// Used for DataGrid Group sort and filter.
@@ -176,7 +234,7 @@ namespace WPF_ZipByLimit.ViewModels
             SelectTargetFolderCommand = new DelegateCommand(selectTargetFolder, canSelectTargetFolder);
             DeleteSelectedFolderCommand = new DelegateCommand(deleteSelectedFolder, canDeleteSelectedFolder);
             StartZipCommand = new DelegateCommand(startZip, canStartZip);
-            MaxSizeTextBoxEnterCommand = new DelegateCommand<string>(maxSizeTextBoxEnter);
+            //MaxSizeTextBoxEnterCommand = new DelegateCommand<string>(maxSizeTextBoxEnter);
 
             //当错误消息列表发生变化的时候，更新Visibility属性
             ErrorMessageCollection.CollectionChanged += OnErrorMessageCollectionChanged;
@@ -212,31 +270,7 @@ namespace WPF_ZipByLimit.ViewModels
             }
         }
 
-        /// <summary>
-        /// 当用户在文本框中输入“要压缩的文件大小”，并按下回车。检查输入是否合法。
-        /// </summary>
-        /// <param name="inputText"></param>
-        private void maxSizeTextBoxEnter(string inputText)
-        {
-            //int number = 0;
-            string errorMessage = "● Max zip size is integer only.";
-            int.TryParse(inputText, out int number);
-            if (number != 0)
-            {
-                MaxZipSize = number;
-                if(ErrorMessageCollection.Contains(errorMessage))
-                {
-                    ErrorMessageCollection.Remove(errorMessage);
-                }
-            }
-            else
-            {
-                if (!ErrorMessageCollection.Contains(errorMessage))
-                {
-                    ErrorMessageCollection.Add(errorMessage);
-                }
-            }
-        }
+
 
         private bool canStartZip()
         {
