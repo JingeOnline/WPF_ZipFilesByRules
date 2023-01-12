@@ -4,7 +4,6 @@
         xmlns:prism="http://prismlibrary.com/"
         prism:ViewModelLocator.AutoWireViewModel="True"
         xmlns:local="clr-namespace:WPF_ZipByLimit.Views"
-        xmlns:validation="clr-namespace:WPF_ZipByLimit.ValidationRules"
         xmlns:cvt="clr-namespace:WPF_ZipByLimit.Converters"
         xmlns:constants="clr-namespace:WPF_ZipByLimit.Constants"
         xmlns:System="clr-namespace:System;assembly=mscorlib"
@@ -18,6 +17,7 @@
         <BooleanToVisibilityConverter x:Key="Bool2VisiConverter"/>
         <cvt:EnumToRadioButtonConverter x:Key="EnumConverter"/>
         <cvt:NumberToDataGridRowBgColorConverter x:Key="BackgroundConverter"/>
+        <cvt:BoolToDataGridRowBgColorConverter x:Key="BackgroundConverter2"/>
         <Style TargetType="{x:Type TextBlock}" x:Key="RightAlignCell">
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="TextAlignment" Value="Right"/>
@@ -61,11 +61,12 @@
         <!--【表格】高度随窗口大小变化-->
         <DataGrid AutoGenerateColumns="False" Grid.Row="1" ItemsSource="{Binding FolderModelCollection}" CanUserAddRows="False" SelectedItem="{Binding DataGridSelectedFolder}" 
                   x:Name="DG_ZipFilesInFolders" LoadingRow="DG_ZipFilesInFolders_LoadingRow">
-            <!--<DataGrid.RowStyle>
-                <Style TargetType="DataGridCell">
-                    <Setter Property="Background" Value="{Binding Path=OverSizedFileCount, Converter={StaticResource BackgroundConverter}}"/>
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Background" Value="{Binding Path=OverSizedFileCount, Converter={StaticResource BackgroundConverter},Mode=OneWay}"/>
+                    <Setter Property="Background" Value="{Binding Path=IsOverSized, Converter={StaticResource BackgroundConverter2},Mode=OneWay}"/>
                 </Style>
-            </DataGrid.RowStyle>-->
+            </DataGrid.RowStyle>
             <DataGrid.Columns>
                 <DataGridTemplateColumn>
                     <DataGridTemplateColumn.CellTemplate>

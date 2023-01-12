@@ -467,7 +467,7 @@ namespace WPF_ZipByLimit.ViewModels
         {
             if (FolderModelCollection == null) return;
 
-            //只压缩所选文件夹的顶层文件，忽略包含的子文件夹，忽略子文件夹内的文件
+            //以文件为大卫，打包到压缩文件夹中，包含所有子文件
             if (ZipUnit == FoldersOrFiles.ZipFiles)
             {
                 //按压缩包大小打包
@@ -491,7 +491,7 @@ namespace WPF_ZipByLimit.ViewModels
                 //按压缩包大小打包
                 if (SelectedZipRule == ZipRule.BySize)
                 {
-                    preCalculateZipFoldersBySize(MaxZipSize, SelectedSizeUnit);
+                   preCalculateZipFoldersBySize(MaxZipSize, SelectedSizeUnit);
                 }
                 //按包含的文件夹数量打包
                 else
@@ -512,6 +512,8 @@ namespace WPF_ZipByLimit.ViewModels
             int index = 1;
             //把超过大小的文件夹，IsOverSized = true
             FolderModelCollection.Where(x => x.FolderSizeTotal > sizeLimit).ToList().ForEach(x => x.IsOverSized = true);
+            //把没有超过大小的文件夹，IsOverSized = false
+            FolderModelCollection.Where(x => x.FolderSizeTotal <= sizeLimit).ToList().ForEach(x => x.IsOverSized = false);
 
             foreach (FolderModel folderModel in FolderModelCollection)
             {
@@ -526,7 +528,7 @@ namespace WPF_ZipByLimit.ViewModels
 
             foreach (FolderModel folderModel in FolderModelCollection)
             {
-                Debug.WriteLine(folderModel.FolderName + ", " + folderModel.ZipResultFile?.FileName);
+                Debug.WriteLine("Folder="+folderModel.FolderName + " will zip to file=" + folderModel.ZipResultFile?.FileName);
             }
         }
 
@@ -561,9 +563,9 @@ namespace WPF_ZipByLimit.ViewModels
 
             folderModel.OverSizedFileList = new List<FileInfo>();
             folderModel.OverSizedFileCount = 0;
-            //获得文件夹中每个文件的信息
+            //获得文件夹中所有文件的信息
             DirectoryInfo dirInfo = new DirectoryInfo(folderModel.FolderPath);
-            List<FileInfo> allFilesInTheFolder = dirInfo.EnumerateFiles("*", SearchOption.TopDirectoryOnly).ToList();
+            List<FileInfo> allFilesInTheFolder = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).ToList();
             //用来给输出的压缩包命名
             int index = 1;
             //输出的压缩包
