@@ -71,6 +71,7 @@
     <Compile Include="Converters\BoolToDataGridRowBgColorConverter.cs" />
     <Compile Include="Converters\EnumToRadioButtonConverter.cs" />
     <Compile Include="Converters\NumberToDataGridRowBgColorConverter.cs" />
+    <Compile Include="Helpers\Helper.cs" />
     <Compile Include="Models\ConstantsAndEnums.cs" />
     <Compile Include="Models\FolderModel.cs" />
     <Compile Include="Constants\SizeUnit.cs" />
@@ -123,5 +124,6 @@
   <ItemGroup>
     <Resource Include="Designbolts-Thin-Download-Zip-File-Download.ico" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

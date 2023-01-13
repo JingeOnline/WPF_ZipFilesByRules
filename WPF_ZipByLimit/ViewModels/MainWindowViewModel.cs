@@ -15,6 +15,8 @@ using System.Windows.Data;
 using System.Diagnostics;
 using Ionic.Zip;
 using System.Collections.Specialized;
+using System.Windows.Controls;
+using WPF_ZipByLimit.Helpers;
 
 namespace WPF_ZipByLimit.ViewModels
 {
@@ -240,6 +242,9 @@ namespace WPF_ZipByLimit.ViewModels
             ErrorMessageCollection.CollectionChanged += OnErrorMessageCollectionChanged;
 
             FolderModelCollection = new ObservableCollection<FolderModel>();
+
+            ToolTipService.ShowDurationProperty.OverrideMetadata(
+    typeof(DependencyObject), new FrameworkPropertyMetadata(Int32.MaxValue));
         }
 
         private void OnErrorMessageCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -389,10 +394,10 @@ namespace WPF_ZipByLimit.ViewModels
             //获取文件夹的大小，不包含子级文件夹的文件
             DirectoryInfo dirInfo = new DirectoryInfo(folderPath);
             long dirSize = await Task.Run(() => dirInfo.EnumerateFiles("*", SearchOption.TopDirectoryOnly).Sum(file => file.Length));
-            string folderSize = getDisplaySizeWithUnit(dirSize);
+            string folderSize = Helper.GetDisplaySizeWithUnit(dirSize);
             //获取文件夹的大小，包含所有子级文件夹的文件
             long folderSizeTotal = await Task.Run(() => dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length));
-            string folderSizeTotalToDisplay = getDisplaySizeWithUnit(folderSizeTotal);
+            string folderSizeTotalToDisplay = Helper.GetDisplaySizeWithUnit(folderSizeTotal);
             //所有下级文件夹的数量
             int subFolderCount = Directory.GetDirectories(folderPath, "*", SearchOption.AllDirectories).Length;
 
@@ -422,31 +427,7 @@ namespace WPF_ZipByLimit.ViewModels
             }
         }
 
-        private string getDisplaySizeWithUnit(long size)
-        {
-            double KB = 1024;
-            double MB = KB * 1024;
-            double GB = MB * 1024;
-            if (size > GB)
-            {
-                double result = size / GB;
-                return result.ToString("0.0") + " GB";
-            }
-            else if (size > MB)
-            {
-                double result = size / MB;
-                return result.ToString("0.0") + " MB";
-            }
-            else if (size > KB)
-            {
-                double result = size / KB;
-                return result.ToString("0.0") + " KB";
-            }
-            else
-            {
-                return size.ToString() + " BT";
-            }
-        }
+
 
         private long getSizeByUnit(int sizeLimitNum, SizeUnit unit)
         {
@@ -631,6 +612,8 @@ namespace WPF_ZipByLimit.ViewModels
                 }
                 else
                 {
+                    //TODO:这句话加在这里有点问题，还需要修改。
+                    zipFileModel.Size = zippedFileSize;
                     break;
                 }
             }
