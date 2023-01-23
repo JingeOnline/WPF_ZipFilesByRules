@@ -16,12 +16,26 @@
         </ObjectDataProvider>
         <BooleanToVisibilityConverter x:Key="Bool2VisiConverter"/>
         <cvt:EnumToRadioButtonConverter x:Key="EnumConverter"/>
-        <cvt:NumberToDataGridRowBgColorConverter x:Key="BackgroundConverter"/>
-        <cvt:BoolToDataGridRowBgColorConverter x:Key="BackgroundConverter2"/>
+        <cvt:NumberToDataGridRowBgColorConverter x:Key="Number2Color"/>
+        <cvt:BoolToDataGridRowBgColorConverter x:Key="BoolToColor"/>
+        <!--设置单元格文字右对齐-->
         <Style TargetType="{x:Type TextBlock}" x:Key="RightAlignCell">
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="TextAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
+        <!--设置DataGrid单元格文字垂直居中--><!--
+        <Style TargetType="{x:Type DataGridCell}" x:Key="Body_Content_DataGrid_Centering">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type DataGridCell}">
+                        <Grid Background="{TemplateBinding Background}">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>-->
     </Window.Resources>
 
     <Grid Margin="8">
@@ -59,15 +73,22 @@
         </StackPanel>
 
         <!--【表格】高度随窗口大小变化-->
-        <DataGrid AutoGenerateColumns="False" Grid.Row="1" ItemsSource="{Binding FolderModelCollection}" CanUserAddRows="False" SelectedItem="{Binding DataGridSelectedFolder}" 
-                  x:Name="DG_ZipFilesInFolders" LoadingRow="DG_ZipFilesInFolders_LoadingRow" >
+        <DataGrid AutoGenerateColumns="False" Grid.Row="1" ItemsSource="{Binding FolderModelCollection}" CanUserAddRows="False" 
+                  SelectedItem="{Binding DataGridSelectedFolder}" 
+                  x:Name="DG_ZipFilesInFolders" LoadingRow="DG_ZipFilesInFolders_LoadingRow" Margin="0,8,0,4">
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
-                    <Setter Property="Background" Value="{Binding Path=OverSizedFileCount, Converter={StaticResource BackgroundConverter},Mode=OneWay}"/>
-                    <Setter Property="Background" Value="{Binding Path=IsOverSized, Converter={StaticResource BackgroundConverter2},Mode=OneWay}"/>
-                    <!--<Setter Property="ToolTip" Value="Test tool tip"/>-->
+                    <Setter Property="Background" Value="{Binding Path=OverSizedFileCount, Converter={StaticResource Number2Color},Mode=OneWay}"/>
+                    <Setter Property="Background" Value="{Binding Path=IsOverSized, Converter={StaticResource BoolToColor},Mode=OneWay}"/>
                 </Style>
             </DataGrid.RowStyle>
+
+            <DataGrid.RowHeaderTemplate>
+                <DataTemplate>
+                    <Expander x:Name="DetialExpander" Expanded="DetialExpander_Expanded" Collapsed="DetialExpander_Collapsed"/>
+                </DataTemplate>
+            </DataGrid.RowHeaderTemplate>
+
             <DataGrid.Columns>
                 <DataGridTemplateColumn>
                     <DataGridTemplateColumn.CellTemplate>
@@ -76,7 +97,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Folder Name" Width="auto" Binding="{Binding FolderName}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Folder Name" Width="auto" Binding="{Binding FolderName}" IsReadOnly="True" ElementStyle="{StaticResource RightAlignCell}"/>
                 <DataGridTextColumn Header="Sub-Folder" Width="auto" Binding="{Binding SubFolderCount}" IsReadOnly="True" ElementStyle="{StaticResource RightAlignCell}"/>
                 <DataGridTextColumn Header="Folder Size" Width="auto" IsReadOnly="True" Binding="{Binding FolderSize}" ElementStyle="{StaticResource RightAlignCell}"/>
                 <DataGridTextColumn Header="Folder Size Total" Width="auto" IsReadOnly="True" Binding="{Binding FolderSizeTotalToDisplay}" ElementStyle="{StaticResource RightAlignCell}"/>
@@ -85,7 +106,7 @@
                 <DataGridTextColumn Header="Oversized Files" Width="auto" IsReadOnly="True" Binding="{Binding OverSizedFileCount}">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource RightAlignCell}">
-                            <Setter Property="Background" Value="{Binding Path=OverSizedFileCount, Converter={StaticResource BackgroundConverter}}"/>
+                            <Setter Property="Background" Value="{Binding Path=OverSizedFileCount, Converter={StaticResource Number2Color}}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                     <!--<DataGridTextColumn.CellStyle>
@@ -117,7 +138,7 @@
                 <DataTemplate>
                     <Border BorderThickness="1" Background="White" BorderBrush="Gray" Padding="8">
                         <StackPanel>
-                            <TextBlock Text="Attentions" Background="{Binding Path=OverSizedFileCount, Converter={StaticResource BackgroundConverter}}" 
+                            <TextBlock Text="Attentions" Background="{Binding Path=OverSizedFileCount, Converter={StaticResource Number2Color}}" 
                                        FontWeight="Bold" Foreground="White"
                                        Visibility="{Binding IsDetailAttentionMessageVisiable,Mode=OneWay,Converter={StaticResource Bool2VisiConverter}}"/>
                             <TextBlock Text="{Binding DetailAttentionMessage,Mode=OneWay}"

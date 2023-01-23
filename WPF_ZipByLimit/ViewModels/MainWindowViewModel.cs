@@ -472,7 +472,7 @@ namespace WPF_ZipByLimit.ViewModels
                 //按压缩包大小打包
                 if (SelectedZipRule == ZipRule.BySize)
                 {
-                   preCalculateZipFoldersBySize(MaxZipSize, SelectedSizeUnit);
+                    preCalculateZipFoldersBySize(MaxZipSize, SelectedSizeUnit);
                 }
                 //按包含的文件夹数量打包
                 else
@@ -509,7 +509,7 @@ namespace WPF_ZipByLimit.ViewModels
 
             foreach (FolderModel folderModel in FolderModelCollection)
             {
-                Debug.WriteLine("Folder="+folderModel.FolderName + " will zip to file=" + folderModel.ZipResultFile?.FileName);
+                Debug.WriteLine("Folder=" + folderModel.FolderName + " will zip to file=" + folderModel.ZipResultFile?.FileName);
             }
         }
 
@@ -561,7 +561,11 @@ namespace WPF_ZipByLimit.ViewModels
                     Path = Path.Combine(TargetFolderPath, zipFileName)
                 };
                 folderModel.OverSizedFileList.AddRange(putFilesInZip(ref zipFileModel, ref allFilesInTheFolder));
-                zipFileModelList.Add(zipFileModel);
+                //如果所有文件都超过压缩文件大小，压缩文件中就一个文件都没有，就不要输出压缩文件。
+                if (zipFileModel.ContainedFiles.Count > 0)
+                {
+                    zipFileModelList.Add(zipFileModel);
+                }
                 index++;
             }
             folderModel.ZipFileList = zipFileModelList;
@@ -577,7 +581,7 @@ namespace WPF_ZipByLimit.ViewModels
         /// <returns>返回无法装入的文件列表</returns>
         private List<FileInfo> putFilesInZip(ref ZipFileModel zipFileModel, ref List<FileInfo> filesForZip)
         {
-            long zippedFileSize = 0;
+            //long zippedFileSize = 0;
             List<FileInfo> overSizedFiles = new List<FileInfo>();
             List<FileInfo> zipFiles = new List<FileInfo>();
             #region Removed Method
@@ -605,15 +609,14 @@ namespace WPF_ZipByLimit.ViewModels
                     continue;
                 }
 
-                zippedFileSize += fileInfo.Length;
-                if (zippedFileSize < zipFileModel.SizeLimit)
+                //zippedFileSize += fileInfo.Length;
+                if (zipFileModel.Size+ fileInfo.Length < zipFileModel.SizeLimit)
                 {
                     zipFiles.Add(fileInfo);
+                    zipFileModel.Size+= fileInfo.Length;
                 }
                 else
                 {
-                    //TODO:这句话加在这里有点问题，还需要修改。
-                    zipFileModel.Size = zippedFileSize;
                     break;
                 }
             }

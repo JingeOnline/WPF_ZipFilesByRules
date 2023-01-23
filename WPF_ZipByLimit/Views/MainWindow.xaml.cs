@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace WPF_ZipByLimit.Views
 {
@@ -24,6 +25,25 @@ namespace WPF_ZipByLimit.Views
         {
             Regex regex = new Regex("[^0-9]+");
             e.Handled = regex.IsMatch(e.Text);
+        }
+
+        //面板展开
+        private void DetialExpander_Expanded(object sender, RoutedEventArgs e)
+        {
+            if (sender is Expander expander)
+            {
+                var row = DataGridRow.GetRowContainingElement(expander);
+                row.DetailsVisibility = Visibility.Visible;
+            }
+        }
+        //面板关闭
+        private void DetialExpander_Collapsed(object sender, RoutedEventArgs e)
+        {
+            if (sender is Expander expander)
+            {
+                var row = DataGridRow.GetRowContainingElement(expander);
+                row.DetailsVisibility = Visibility.Collapsed;
+            }
         }
     }
 }

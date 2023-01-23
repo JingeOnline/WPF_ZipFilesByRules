@@ -19,7 +19,7 @@ namespace WPF_ZipByLimit.Converters
             }
             else
             {
-                return new SolidColorBrush(Colors.White);
+                return new SolidColorBrush(Colors.Transparent);
             }
         }
 

@@ -16,17 +16,17 @@ namespace WPF_ZipByLimit.Helpers
             if (size > GB)
             {
                 double result = size / GB;
-                return result.ToString("0.00") + " GB";
+                return result.ToString("0.0") + " GB";
             }
             else if (size > MB)
             {
                 double result = size / MB;
-                return result.ToString("0.00") + " MB";
+                return result.ToString("0.0") + " MB";
             }
             else if (size > KB)
             {
                 double result = size / KB;
-                return result.ToString("0.00") + " KB";
+                return result.ToString("0.0") + " KB";
             }
             else
             {
