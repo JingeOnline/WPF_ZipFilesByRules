@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WPF_ZipByLimit.Constants;
 
 namespace WPF_ZipByLimit.Helpers
 {
@@ -30,7 +31,22 @@ namespace WPF_ZipByLimit.Helpers
             }
             else
             {
-                return size.ToString() + " BT";
+                return size.ToString() + " Byte";
+            }
+        }
+
+        public static long GetSizeByUnit(int sizeLimitNum, SizeUnit unit)
+        {
+            switch (unit)
+            {
+                case SizeUnit.KB:
+                    return (long)sizeLimitNum * 1024;
+                case SizeUnit.MB:
+                    return (long)sizeLimitNum * 1024 * 1024;
+                case SizeUnit.GB:
+                    return (long)sizeLimitNum * 1024 * 1024 * 1024;
+                default:
+                    return 0;
             }
         }
     }

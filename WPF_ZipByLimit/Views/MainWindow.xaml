@@ -123,7 +123,7 @@
                         </Style>
                     </DataGridTextColumn.CellStyle>-->
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Output Zip Files" Width="auto" IsReadOnly="True" Binding="{Binding OutputZipCount}" ElementStyle="{StaticResource RightAlignCell}"/>
+                <DataGridTextColumn Header="Output Zip Files" Width="auto" IsReadOnly="True" Binding="{Binding OutputZipFilesString}" ElementStyle="{StaticResource RightAlignCell}"/>
                 <DataGridTemplateColumn Header="Progress" Width="*" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>

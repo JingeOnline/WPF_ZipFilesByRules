@@ -76,11 +76,11 @@ namespace WPF_ZipByLimit.Models
         }
 
 
-        private int _OutputZipCount;
-        public int OutputZipCount
+        private string _OutputZipFilesString;
+        public string OutputZipFilesString
         {
-            get { return _OutputZipCount; }
-            set { SetProperty(ref _OutputZipCount, value); RaisePropertyChanged(nameof(DetailOutputZipMessage)); }
+            get { return _OutputZipFilesString; }
+            set { SetProperty(ref _OutputZipFilesString, value); RaisePropertyChanged(nameof(DetailOutputZipMessage)); }
         }
         private string _CurrentZipFile;
         public string CurrentZipFile
@@ -110,7 +110,7 @@ namespace WPF_ZipByLimit.Models
             get { return _OverSizedFileCount; }
             set
             {
-                SetProperty(ref _OverSizedFileCount, value); 
+                SetProperty(ref _OverSizedFileCount, value);
                 RaisePropertyChanged(nameof(DetailAttentionMessage));
                 RaisePropertyChanged(nameof(IsDetailAttentionMessageVisiable));
             }
@@ -121,12 +121,15 @@ namespace WPF_ZipByLimit.Models
 
         private ZipFileModel _ZipResultFile;
         /// <summary>
-        /// 把多个文件夹压缩成一个文件
+        /// 当以文件夹为单位压缩的时候，当前文件夹会被压缩成的Zip文件对象
         /// </summary>
         public ZipFileModel ZipResultFile
         {
             get { return _ZipResultFile; }
-            set { SetProperty(ref _ZipResultFile, value); }
+            set
+            {
+                SetProperty(ref _ZipResultFile, value);
+            }
         }
 
 
@@ -137,7 +140,10 @@ namespace WPF_ZipByLimit.Models
         public bool IsOverSized
         {
             get { return _IsOverSized; }
-            set { SetProperty(ref _IsOverSized, value); }
+            set
+            {
+                SetProperty(ref _IsOverSized, value);
+            }
         }
 
         /// <summary>
@@ -153,7 +159,8 @@ namespace WPF_ZipByLimit.Models
                     foreach (FileInfo fileInfo in OverSizedFileList)
                     {
                         string sizeWithUnit = Helper.GetDisplaySizeWithUnit(fileInfo.Length);
-                        stringBuilder.AppendLine($"● {fileInfo.FullName} [Size={sizeWithUnit}] beyond the size limit that you set.");
+                        //stringBuilder.AppendLine($"● {fileInfo.FullName} [Size={sizeWithUnit}] beyond the size limit that you set.");
+                        stringBuilder.AppendLine($"● [File Over Size Limit] [Size={sizeWithUnit}] {fileInfo.FullName}");
                     }
                     return stringBuilder.ToString();
                 }
@@ -163,7 +170,7 @@ namespace WPF_ZipByLimit.Models
                 }
             }
         }
-        
+
         public bool IsDetailAttentionMessageVisiable
         {
             get { return DetailAttentionMessage != null; }
@@ -173,13 +180,14 @@ namespace WPF_ZipByLimit.Models
         {
             get
             {
-                if(ZipFileList!=null && ZipFileList.Count>0)
+                if (ZipFileList != null && ZipFileList.Count > 0)
                 {
                     StringBuilder stringBuilder = new StringBuilder();
                     foreach (ZipFileModel zipFile in ZipFileList)
                     {
                         string sizeWithUnit = Helper.GetDisplaySizeWithUnit(zipFile.Size);
                         stringBuilder.AppendLine($"● {zipFile.Path} [Size={sizeWithUnit}] [Contains Files={zipFile.ContainedFiles.Count}]");
+                        //stringBuilder.AppendLine($"● [Over Size Limit]");
                     }
                     return stringBuilder.ToString();
                 }

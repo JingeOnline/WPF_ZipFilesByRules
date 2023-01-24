@@ -14,6 +14,7 @@ namespace WPF_ZipByLimit.Models
         public List<FileInfo> ContainedFiles { get; set; }
         public long Size { get; set; }
         public long SizeLimit { get; set; }
+        public long SpareSize { get { return SizeLimit - Size; } }
         public int AmountLimit { get; set; }
         //public List<FolderModel> ContainedFolders { get; set; }
     }
