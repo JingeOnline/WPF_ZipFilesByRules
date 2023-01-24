@@ -24,7 +24,8 @@
             <Setter Property="TextAlignment" Value="Right"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
-        <!--设置DataGrid单元格文字垂直居中--><!--
+        <!--设置DataGrid单元格文字垂直居中-->
+        <!--
         <Style TargetType="{x:Type DataGridCell}" x:Key="Body_Content_DataGrid_Centering">
             <Setter Property="Template">
                 <Setter.Value>
@@ -75,7 +76,8 @@
         <!--【表格】高度随窗口大小变化-->
         <DataGrid AutoGenerateColumns="False" Grid.Row="1" ItemsSource="{Binding FolderModelCollection}" CanUserAddRows="False" 
                   SelectedItem="{Binding DataGridSelectedFolder}" 
-                  x:Name="DG_ZipFilesInFolders" LoadingRow="DG_ZipFilesInFolders_LoadingRow" Margin="0,8,0,4">
+                  x:Name="DG_ZipFilesInFolders" LoadingRow="DG_ZipFilesInFolders_LoadingRow" Margin="0,8,0,4"
+                  RowDetailsVisibilityMode="Collapsed">
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
                     <Setter Property="Background" Value="{Binding Path=OverSizedFileCount, Converter={StaticResource Number2Color},Mode=OneWay}"/>
@@ -136,16 +138,18 @@
             <!--DataGrid Detail面板，用户单击一行，可以显示该行的额外信息。-->
             <DataGrid.RowDetailsTemplate>
                 <DataTemplate>
-                    <Border BorderThickness="1" Background="White" BorderBrush="Gray" Padding="8">
-                        <StackPanel>
-                            <TextBlock Text="Attentions" Background="{Binding Path=OverSizedFileCount, Converter={StaticResource Number2Color}}" 
+                    <Border BorderThickness="1" Background="White" BorderBrush="Gray" Padding="8" MaxHeight="240">
+                        <ScrollViewer>
+                            <StackPanel>
+                                <TextBlock Text="Attentions" Background="{Binding Path=OverSizedFileCount, Converter={StaticResource Number2Color}}" 
                                        FontWeight="Bold" Foreground="White"
                                        Visibility="{Binding IsDetailAttentionMessageVisiable,Mode=OneWay,Converter={StaticResource Bool2VisiConverter}}"/>
-                            <TextBlock Text="{Binding DetailAttentionMessage,Mode=OneWay}"
+                                <TextBlock Text="{Binding DetailAttentionMessage,Mode=OneWay}"
                                        Visibility="{Binding IsDetailAttentionMessageVisiable,Mode=OneWay,Converter={StaticResource Bool2VisiConverter}}"/>
-                            <TextBlock Text="Output Zip Files" Background="ForestGreen"  FontWeight="Bold" Foreground="White"/>
-                            <TextBlock Text="{Binding DetailOutputZipMessage, Mode=OneWay}"/>
-                        </StackPanel>
+                                <TextBlock Text="Output Zip Files" Background="ForestGreen"  FontWeight="Bold" Foreground="White"/>
+                                <TextBlock Text="{Binding DetailOutputZipMessage, Mode=OneWay}"/>
+                            </StackPanel>
+                        </ScrollViewer>
                     </Border>
                 </DataTemplate>
             </DataGrid.RowDetailsTemplate>
